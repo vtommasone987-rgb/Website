@@ -8,16 +8,20 @@ import path from "path";
 import { randomUUID } from "crypto";
 import {
   addAssetToCustomOrder,
+  addAssetToTicket,
   createAsset,
+  createEmployee,
   createGroup,
   createPurchase,
   createPurchaseGroup,
   deleteAsset,
+  deleteEmployee,
   deletePurchase,
   markSold,
   permanentlyDeleteAsset,
   permanentlyDeletePurchase,
   removeAssetFromCustomOrder,
+  removeAssetFromTicket,
   restoreAsset,
   restorePurchase,
   setCustomOrderAssignee,
@@ -25,9 +29,10 @@ import {
   setTicketAssignee,
   setTicketCompleted,
   updateAsset,
+  updateEmployee,
   updatePurchase,
 } from "@/lib/store";
-import { SESSION_COOKIE_NAME, isValidSessionValue } from "@/lib/session";
+import { SESSION_COOKIE_NAME, isAdminSubject, isValidSessionValue, getSessionSubject } from "@/lib/session";
 import type { StorageType } from "@/lib/types";
 
 // Upper bounds for the parts/storage-device loops below — the form starts with
@@ -45,6 +50,18 @@ async function assertAdmin() {
   const store = await cookies();
   if (!isValidSessionValue(store.get(SESSION_COOKIE_NAME)?.value)) {
     redirect("/admin/login");
+  }
+}
+
+// Stricter than assertAdmin(): that just checks "is anyone logged in" (owner or
+// employee); this additionally requires the shared owner login specifically, for
+// actions employees shouldn't be able to take (e.g. removing another employee).
+async function assertOwner() {
+  await assertAdmin();
+  const store = await cookies();
+  const subject = getSessionSubject(store.get(SESSION_COOKIE_NAME)?.value);
+  if (!isAdminSubject(subject)) {
+    redirect("/admin/employees?error=" + encodeURIComponent("Only the shop owner can do that."));
   }
 }
 
@@ -224,6 +241,23 @@ export async function setTicketAssigneeAction(ticketId: string, formData: FormDa
   revalidatePath("/admin/tickets");
 }
 
+export async function attachAssetToTicketAction(ticketId: string, formData: FormData) {
+  await assertAdmin();
+  const assetId = String(formData.get("assetId") ?? "");
+  if (assetId) {
+    addAssetToTicket(ticketId, assetId);
+  }
+  revalidatePath(`/admin/tickets/${ticketId}`);
+  revalidatePath("/admin/tickets");
+}
+
+export async function removeAssetFromTicketAction(ticketId: string, assetId: string) {
+  await assertAdmin();
+  removeAssetFromTicket(ticketId, assetId);
+  revalidatePath(`/admin/tickets/${ticketId}`);
+  revalidatePath("/admin/tickets");
+}
+
 export async function setCustomOrderAssigneeAction(orderId: string, formData: FormData) {
   await assertAdmin();
   setCustomOrderAssignee(orderId, optionalString(formData, "assignedTo"));
@@ -268,6 +302,7 @@ export async function createPurchaseAction(formData: FormData) {
     purchasedAt: String(formData.get("purchasedAt") ?? ""),
     notes: optionalString(formData, "notes"),
     group: groupFromFormData(formData),
+    assetId: optionalString(formData, "assetId"),
   });
   revalidatePath("/admin/purchases");
   redirect("/admin/purchases");
@@ -283,6 +318,7 @@ export async function updatePurchaseAction(id: string, formData: FormData) {
     purchasedAt: String(formData.get("purchasedAt") ?? ""),
     notes: optionalString(formData, "notes"),
     group: groupFromFormData(formData),
+    assetId: optionalString(formData, "assetId"),
   });
   revalidatePath("/admin/purchases");
   revalidatePath(`/admin/purchases/${id}`);
@@ -318,4 +354,44 @@ export async function createPurchaseGroupAction(formData: FormData) {
   // the group dropdown) also pick up the new group immediately.
   revalidatePath("/admin", "layout");
   redirect("/admin/purchases");
+}
+
+export async function createEmployeeAction(formData: FormData) {
+  await assertAdmin();
+  const result = createEmployee({
+    name: String(formData.get("name") ?? ""),
+    username: String(formData.get("username") ?? ""),
+    password: String(formData.get("password") ?? ""),
+  });
+  if (!result.ok) {
+    redirect(`/admin/employees/new?error=${encodeURIComponent(result.error)}`);
+  }
+  revalidatePath("/admin/employees");
+  // "layout" so every page with an "Assigned to" datalist picks up the new name.
+  revalidatePath("/admin", "layout");
+  redirect("/admin/employees");
+}
+
+export async function updateEmployeeAction(id: string, formData: FormData) {
+  await assertAdmin();
+  const password = String(formData.get("password") ?? "");
+  const result = updateEmployee(id, {
+    name: String(formData.get("name") ?? ""),
+    username: String(formData.get("username") ?? ""),
+    password: password.trim() ? password : undefined,
+  });
+  if (!result.ok) {
+    redirect(`/admin/employees/${id}?error=${encodeURIComponent(result.error)}`);
+  }
+  revalidatePath("/admin/employees");
+  revalidatePath("/admin", "layout");
+  redirect("/admin/employees");
+}
+
+export async function deleteEmployeeAction(id: string) {
+  await assertOwner();
+  deleteEmployee(id);
+  revalidatePath("/admin/employees");
+  revalidatePath("/admin", "layout");
+  redirect("/admin/employees");
 }

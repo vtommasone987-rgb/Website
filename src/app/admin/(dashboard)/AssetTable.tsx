@@ -13,6 +13,7 @@ export function AssetTable({ assets, showGroupColumn = false }: { assets: Asset[
       <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
         <thead className="bg-slate-50 text-left dark:bg-slate-800">
           <tr>
+            <th className="px-4 py-2 font-medium">Asset #</th>
             <th className="px-4 py-2 font-medium">Name</th>
             <th className="px-4 py-2 font-medium">Model</th>
             <th className="px-4 py-2 font-medium">Serial #</th>
@@ -27,6 +28,7 @@ export function AssetTable({ assets, showGroupColumn = false }: { assets: Asset[
         <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
           {assets.map((asset) => (
             <tr key={asset.id}>
+              <td className="px-4 py-2 font-mono text-xs text-slate-500">{asset.assetNumber}</td>
               <td className="px-4 py-2">{asset.name}</td>
               <td className="px-4 py-2 text-slate-500">{asset.model}</td>
               <td className="px-4 py-2 font-mono text-xs text-slate-500">{asset.serialNumber}</td>

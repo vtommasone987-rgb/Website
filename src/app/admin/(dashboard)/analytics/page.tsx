@@ -1,7 +1,18 @@
 import { listSales, salesSummary } from "@/lib/store";
 import { formatDate, formatPrice } from "@/lib/format";
+import { isAdminSubject } from "@/lib/session";
+import { getCurrentSubject } from "@/lib/auth";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  if (!isAdminSubject(await getCurrentSubject())) {
+    return (
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-semibold">Sales analytics</h1>
+        <p className="text-sm text-zinc-500">This page is only available to the shop owner.</p>
+      </div>
+    );
+  }
+
   const summary = salesSummary();
   const sales = listSales();
   const maxSale = Math.max(1, ...sales.map((s) => s.salePriceCents));

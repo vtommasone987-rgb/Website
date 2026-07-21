@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listAssignees, listTickets } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 import { CompletionCheckbox } from "../CompletionCheckbox";
@@ -43,6 +44,7 @@ export default function TicketsPage() {
                 <th className="px-4 py-2 font-medium">Email</th>
                 <th className="px-4 py-2 font-medium">Category</th>
                 <th className="px-4 py-2 font-medium">Description</th>
+                <th className="px-4 py-2 font-medium">Assets</th>
                 <th className="px-4 py-2 font-medium">Assigned to</th>
                 <th className="px-4 py-2 font-medium">Done</th>
               </tr>
@@ -51,10 +53,19 @@ export default function TicketsPage() {
               {tickets.map((ticket) => (
                 <tr key={ticket.id} className={ticket.completed ? "opacity-50" : undefined}>
                   <td className="whitespace-nowrap px-4 py-2 text-slate-500">{formatDate(ticket.createdAt)}</td>
-                  <td className="px-4 py-2">{ticket.name}</td>
+                  <td className="px-4 py-2">
+                    <Link href={`/admin/tickets/${ticket.id}`} className="font-medium underline">
+                      {ticket.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-2 text-slate-500">{ticket.email}</td>
                   <td className="whitespace-nowrap px-4 py-2">{CATEGORY_LABELS[ticket.category]}</td>
                   <td className="px-4 py-2 max-w-sm">{ticket.description}</td>
+                  <td className="whitespace-nowrap px-4 py-2">
+                    <Link href={`/admin/tickets/${ticket.id}`} className="text-slate-500 underline">
+                      {ticket.assetIds.length} linked
+                    </Link>
+                  </td>
                   <td className="px-4 py-2">
                     <form action={setTicketAssigneeAction.bind(null, ticket.id)} className="flex items-center gap-2">
                       <input

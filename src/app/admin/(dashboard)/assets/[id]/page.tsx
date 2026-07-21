@@ -31,7 +31,9 @@ export default async function EditAssetPage({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Edit asset</h1>
+        <h1 className="text-2xl font-semibold">
+          Edit asset <span className="font-mono text-lg font-normal text-slate-500">#{asset.assetNumber}</span>
+        </h1>
         <form action={deleteAssetAction.bind(null, asset.id)}>
           <button type="submit" className="text-sm font-medium text-red-600 underline dark:text-red-400">
             Delete asset

@@ -1,11 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
-import { listAvailableAssets } from "@/lib/store";
-import { formatPrice } from "@/lib/format";
+import { PageNav } from "./PageNav";
 
 export default function Home() {
-  const featured = listAvailableAssets().slice(0, 3);
-
   return (
     <div className="flex flex-col gap-16">
       <section className="flex flex-col items-start gap-6 py-8 sm:py-16">
@@ -32,46 +28,44 @@ export default function Home() {
           >
             Request a custom build
           </Link>
+          <Link
+            href="/what-we-do"
+            className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-50 dark:hover:border-zinc-500"
+          >
+            What we do
+          </Link>
         </div>
       </section>
 
-      {featured.length > 0 && (
-        <section className="flex flex-col gap-6">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-xl font-semibold">Recently listed</h2>
-            <Link href="/shop" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-              View all →
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {featured.map((asset) => (
-              <Link
-                key={asset.id}
-                href={`/shop/${asset.id}`}
-                className="group flex flex-col overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800"
-              >
-                <div className="relative aspect-[4/3] bg-zinc-100 dark:bg-zinc-900">
-                  {asset.images[0] && (
-                    <Image
-                      src={asset.images[0].url}
-                      alt={asset.name}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 33vw"
-                      className="object-cover transition-transform group-hover:scale-105"
-                    />
-                  )}
-                </div>
-                <div className="flex flex-col gap-1 p-4">
-                  <h3 className="font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                    {asset.name}
-                  </h3>
-                  <p className="font-semibold">{formatPrice(asset.priceCents)}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="flex flex-col gap-6 overflow-hidden rounded-2xl bg-blue-950 px-8 py-12 sm:px-12 sm:py-16">
+        <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">Not a typical MSP</h2>
+        <ul className="flex flex-col gap-3 text-white/90">
+          <li className="flex gap-3">
+            <span aria-hidden className="text-white/50">•</span>
+            We are a small group of extremely talented Tier 3 and Tier 4 network focused individuals
+          </li>
+          <li className="flex gap-3">
+            <span aria-hidden className="text-white/50">•</span>
+            We are DELIGHTED to work on a project or hourly basis. No monthly fixed charges required.
+          </li>
+          <li className="flex gap-3">
+            <span aria-hidden className="text-white/50">•</span>
+            We don&apos;t have the &quot;we do everything&quot; attitude. What we do, we do extremely well.
+          </li>
+          <li className="flex gap-3">
+            <span aria-hidden className="text-white/50">•</span>
+            Immediate access 24/7 to your preferred tech via SMS.
+          </li>
+        </ul>
+        <Link
+          href="/contact"
+          className="self-start rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-zinc-900 transition-colors hover:bg-orange-400"
+        >
+          Contact us to discuss your needs
+        </Link>
+      </section>
+
+      <PageNav current={1} />
     </div>
   );
 }

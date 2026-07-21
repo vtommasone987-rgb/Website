@@ -1,4 +1,5 @@
-import type { Purchase } from "@/lib/types";
+import Link from "next/link";
+import type { Asset, Purchase } from "@/lib/types";
 
 function today(): string {
   // Build from local date parts rather than toISOString() (which is UTC-based)
@@ -15,11 +16,13 @@ export function PurchaseForm({
   purchase,
   submitLabel,
   existingGroups = [],
+  assets = [],
 }: {
   action: (formData: FormData) => void;
   purchase?: Purchase;
   submitLabel: string;
   existingGroups?: string[];
+  assets?: Asset[];
 }) {
   return (
     <form action={action} className="flex flex-col gap-4 max-w-2xl">
@@ -43,7 +46,7 @@ export function PurchaseForm({
         </label>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1 text-sm font-medium">
           Quantity
           <input
@@ -68,6 +71,9 @@ export function PurchaseForm({
             className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1 text-sm font-medium">
           Date
           <input
@@ -77,6 +83,24 @@ export function PurchaseForm({
             defaultValue={purchase?.purchasedAt ?? today()}
             className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
           />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          Related asset <span className="font-normal text-zinc-500">(optional)</span>
+          <select
+            name="assetId"
+            defaultValue={purchase?.assetId ?? ""}
+            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          >
+            <option value="">— None —</option>
+            {assets.map((asset) => (
+              <option key={asset.id} value={asset.id}>
+                #{asset.assetNumber} — {asset.name} ({asset.serialNumber})
+              </option>
+            ))}
+          </select>
+          <Link href="/admin/assets/new" target="_blank" className="text-xs font-normal text-indigo-600 underline dark:text-indigo-400">
+            + New asset (opens in a new tab, gets its own asset # automatically)
+          </Link>
         </label>
       </div>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPurchase, listPurchaseGroups } from "@/lib/store";
+import { getPurchase, listAssets, listPurchaseGroups } from "@/lib/store";
 import { PurchaseForm } from "@/app/admin/PurchaseForm";
 import { deletePurchaseAction, updatePurchaseAction } from "@/app/admin/actions";
 
@@ -29,7 +29,7 @@ export default async function EditPurchasePage({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Edit purchase</h1>
         <form action={deletePurchaseAction.bind(null, purchase.id)}>
@@ -44,6 +44,7 @@ export default async function EditPurchasePage({
         purchase={purchase}
         submitLabel="Save changes"
         existingGroups={listPurchaseGroups()}
+        assets={listAssets()}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createSessionValue, verifyCredentials, SESSION_COOKIE_NAME } from "@/lib/session";
+import { authenticate, createSessionValue, SESSION_COOKIE_NAME } from "@/lib/session";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 
@@ -22,17 +22,22 @@ export async function loginAction(formData: FormData) {
     redirect(`/admin/login?error=rate-limited&from=${encodeURIComponent(safeFrom)}`);
   }
 
-  if (!verifyCredentials(username, password)) {
+  const result = authenticate(username, password);
+  if (!result.ok) {
     redirect(`/admin/login?error=1&from=${encodeURIComponent(safeFrom)}`);
   }
 
   const store = await cookies();
-  store.set(SESSION_COOKIE_NAME, createSessionValue(), {
+  // No maxAge/expires on purpose — this makes it a browser-session cookie, so
+  // signing in only lasts until the browser (not just the tab) is closed, or
+  // until "Sign out" is clicked. The signed token's own SESSION_TTL_MS in
+  // session.ts still caps it at 7 days as a backstop, in case a browser or
+  // extension restores cookies across a restart.
+  store.set(SESSION_COOKIE_NAME, createSessionValue(result.subject), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7,
   });
 
   redirect(safeFrom);

@@ -1,15 +1,24 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { findEmployeeByUsername } from "./store";
+import { verifyPassword } from "./password";
 
 /**
- * Signed, stateless admin session tokens (payload = expiry timestamp, signed with
- * an HMAC secret). No database is needed to validate a session, which matters
- * because this same check has to run in `proxy.ts` (fast, no DB access) and in
- * every admin server action as a defense-in-depth check per Next.js's own guidance
+ * Signed, stateless admin session tokens (payload = subject + expiry timestamp,
+ * signed with an HMAC secret). No database is needed to validate a session, which
+ * matters because this same check has to run in `proxy.ts` (fast, no DB access) and
+ * in every admin server action as a defense-in-depth check per Next.js's own guidance
  * that a proxy matcher change could silently stop covering a route.
+ *
+ * Trade-off worth knowing: because validation never hits the store, deleting an
+ * employee doesn't invalidate any session they already have — they stay signed in
+ * until that cookie expires (7 days) or they sign out. Revoking sooner would need a
+ * server-side session list, which defeats the "no DB lookup" point of this design.
  */
 
 export const SESSION_COOKIE_NAME = "admin_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+const ADMIN_SUBJECT = "admin";
+const EMPLOYEE_SUBJECT_PREFIX = "employee:";
 
 function getSessionSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -23,25 +32,51 @@ function sign(payload: string): string {
   return createHmac("sha256", getSessionSecret()).update(payload).digest("hex");
 }
 
-export function createSessionValue(): string {
+export function createSessionValue(subject: string): string {
   const expires = Date.now() + SESSION_TTL_MS;
-  const payload = String(expires);
+  const payload = `${subject}|${expires}`;
   return `${payload}.${sign(payload)}`;
+}
+
+function splitPayload(value: string): { payload: string; signature: string } | null {
+  const dotIndex = value.lastIndexOf(".");
+  if (dotIndex === -1) return null;
+  return { payload: value.slice(0, dotIndex), signature: value.slice(dotIndex + 1) };
 }
 
 export function isValidSessionValue(value: string | undefined | null): boolean {
   if (!value) return false;
-  const [payload, signature] = value.split(".");
-  if (!payload || !signature) return false;
+  const split = splitPayload(value);
+  if (!split || !split.payload || !split.signature) return false;
 
-  const expectedSignature = sign(payload);
-  const signatureBuffer = Buffer.from(signature);
+  const expectedSignature = sign(split.payload);
+  const signatureBuffer = Buffer.from(split.signature);
   const expectedBuffer = Buffer.from(expectedSignature);
   if (signatureBuffer.length !== expectedBuffer.length) return false;
   if (!timingSafeEqual(signatureBuffer, expectedBuffer)) return false;
 
-  const expires = Number(payload);
+  const pipeIndex = split.payload.lastIndexOf("|");
+  if (pipeIndex === -1) return false;
+  const expires = Number(split.payload.slice(pipeIndex + 1));
   return Number.isFinite(expires) && Date.now() < expires;
+}
+
+/** Who a valid session belongs to: "admin" or "employee:<id>". Null if the session isn't valid. */
+export function getSessionSubject(value: string | undefined | null): string | null {
+  if (!isValidSessionValue(value)) return null;
+  const split = splitPayload(value!);
+  const pipeIndex = split!.payload.lastIndexOf("|");
+  return split!.payload.slice(0, pipeIndex);
+}
+
+export function employeeIdFromSubject(subject: string | null): string | null {
+  if (!subject || !subject.startsWith(EMPLOYEE_SUBJECT_PREFIX)) return null;
+  return subject.slice(EMPLOYEE_SUBJECT_PREFIX.length);
+}
+
+/** True only for the shared owner login — not any employee account. */
+export function isAdminSubject(subject: string | null): boolean {
+  return subject === ADMIN_SUBJECT;
 }
 
 function timingSafeEqualString(input: string, expected: string): boolean {
@@ -51,13 +86,26 @@ function timingSafeEqualString(input: string, expected: string): boolean {
   return timingSafeEqual(inputBuffer, expectedBuffer);
 }
 
-export function verifyCredentials(username: string, password: string): boolean {
+export type AuthResult = { ok: true; subject: string; displayName: string } | { ok: false };
+
+/** Checks the shared admin login (.env.local) first, then the employee directory. */
+export function authenticate(username: string, password: string): AuthResult {
   const expectedUsername = process.env.ADMIN_USERNAME;
   const expectedPassword = process.env.ADMIN_PASSWORD;
-  if (!expectedUsername || !expectedPassword) return false;
-  // Check both regardless of whether the first already failed, so a wrong
-  // username doesn't return faster than a wrong password (timing side-channel).
-  const usernameOk = timingSafeEqualString(username, expectedUsername);
-  const passwordOk = timingSafeEqualString(password, expectedPassword);
-  return usernameOk && passwordOk;
+  if (expectedUsername && expectedPassword) {
+    // Check both regardless of whether the first already failed, so a wrong
+    // username doesn't return faster than a wrong password (timing side-channel).
+    const usernameOk = timingSafeEqualString(username, expectedUsername);
+    const passwordOk = timingSafeEqualString(password, expectedPassword);
+    if (usernameOk && passwordOk) {
+      return { ok: true, subject: ADMIN_SUBJECT, displayName: "Admin" };
+    }
+  }
+
+  const employee = findEmployeeByUsername(username);
+  if (employee && verifyPassword(password, employee.passwordHash, employee.passwordSalt)) {
+    return { ok: true, subject: `${EMPLOYEE_SUBJECT_PREFIX}${employee.id}`, displayName: employee.name };
+  }
+
+  return { ok: false };
 }

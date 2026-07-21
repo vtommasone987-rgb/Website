@@ -18,14 +18,17 @@ export default async function ContactPage({
 
       <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
         <div>
+          <h2 className="text-sm font-semibold text-zinc-500">Address</h2>
+          <p className="text-lg">7250 Commerce Drive. Mentor, Ohio 44060</p>
+        </div>
+        <div>
           <h2 className="text-sm font-semibold text-zinc-500">Email</h2>
           {/* PLACEHOLDER — replace with your real support address */}
           <p className="text-lg">support@example.com</p>
         </div>
         <div>
           <h2 className="text-sm font-semibold text-zinc-500">Phone</h2>
-          {/* PLACEHOLDER — replace with your real number */}
-          <p className="text-lg">(555) 123-4567</p>
+          <p className="text-lg">(440) 290-9160</p>
         </div>
         <div>
           <h2 className="text-sm font-semibold text-zinc-500">Hours</h2>
@@ -119,7 +122,8 @@ export default async function ContactPage({
       </div>
 
       <p className="text-xs text-zinc-400">
-        This page is a placeholder — the contact details above aren&apos;t real yet. Edit them in{" "}
+        The email and hours above are still placeholders — the address and phone number are real, but the rest
+        isn&apos;t yet. Edit them in{" "}
         <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-900">src/app/contact/page.tsx</code>.
       </p>
     </div>

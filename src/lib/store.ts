@@ -4,7 +4,9 @@ import type {
   AssetImage,
   CustomOrder,
   CustomOrderCategory,
+  Employee,
   Part,
+  PublicEmployee,
   Purchase,
   Sale,
   StorageDevice,
@@ -12,6 +14,7 @@ import type {
   Ticket,
   TicketCategory,
 } from "./types";
+import { hashPassword } from "./password";
 
 /**
  * In-memory data store standing in for the database while the UI is under review.
@@ -62,6 +65,7 @@ function storageDevice(type: StorageType, capacityGb: number, serialNumber: stri
 const assets: Asset[] = [
   {
     id: "asset-1",
+    assetNumber: 101,
     name: "ThinkPad X1 Carbon Gen 9",
     model: "20XW-CTO1WW",
     serialNumber: "PF3K9J2A",
@@ -83,6 +87,7 @@ const assets: Asset[] = [
   },
   {
     id: "asset-2",
+    assetNumber: 102,
     name: "Canon EOS R5",
     model: "EOS R5 Body",
     serialNumber: "CN0834771",
@@ -109,6 +114,7 @@ const assets: Asset[] = [
   },
   {
     id: "asset-3",
+    assetNumber: 103,
     name: "DeWalt 20V MAX Drill/Driver Kit",
     model: "DCD791D2",
     serialNumber: "DW22190456",
@@ -126,6 +132,7 @@ const assets: Asset[] = [
   },
   {
     id: "asset-4",
+    assetNumber: 104,
     name: "Dell PowerEdge R730 Server",
     model: "PowerEdge R730",
     serialNumber: "DPE730-88213",
@@ -150,6 +157,7 @@ const assets: Asset[] = [
   },
   {
     id: "asset-5",
+    assetNumber: 105,
     name: "Herman Miller Aeron (Size B)",
     model: "Aeron Remastered",
     serialNumber: "HM-AER-33210",
@@ -166,6 +174,11 @@ const assets: Asset[] = [
     assignedTo: null,
   },
 ];
+
+// Next asset number to hand out — starts after the highest seeded number
+// (101–105) so new assets keep counting up from 106. Assigned once at
+// creation and never reused, even if the asset is later deleted.
+let nextAssetNumber = 106;
 
 // Groups are their own list rather than something only derived from assets in
 // use, so a new group can be created up front (e.g. before any asset is
@@ -199,6 +212,7 @@ const tickets: Ticket[] = [
     completed: false,
     createdAt: "2026-07-10T15:22:00.000Z",
     assignedTo: "Sam Rivera",
+    assetIds: ["asset-1"],
   },
   {
     id: "ticket-2",
@@ -209,6 +223,7 @@ const tickets: Ticket[] = [
     completed: true,
     createdAt: "2026-07-02T09:10:00.000Z",
     assignedTo: null,
+    assetIds: [],
   },
 ];
 
@@ -255,6 +270,7 @@ const purchases: Purchase[] = [
     createdAt: "2026-06-20T16:00:00.000Z",
     group: "IT Supplies",
     deletedAt: null,
+    assetId: null,
   },
   {
     id: "purchase-2",
@@ -267,12 +283,17 @@ const purchases: Purchase[] = [
     createdAt: "2026-07-01T12:30:00.000Z",
     group: "Tools",
     deletedAt: null,
+    assetId: null,
   },
 ];
 
 // Purchase groups are their own list, separate from asset groups (different
 // domain — expense/procurement categories, not inventory disposition).
 const purchaseGroups: string[] = ["IT Supplies", "Tools"];
+
+// No seed data here on purpose — unlike assets/purchases, employee accounts are
+// real login credentials, so the list starts empty for whoever sets this up.
+const employees: Employee[] = [];
 
 export function listAssets(): Asset[] {
   return assets.filter((a) => !a.deletedAt);
@@ -303,6 +324,7 @@ export type AssetInput = {
 export function createAsset(input: AssetInput): Asset {
   const asset: Asset = {
     id: randomUUID(),
+    assetNumber: nextAssetNumber++,
     name: input.name,
     model: input.model,
     serialNumber: input.serialNumber,
@@ -370,7 +392,14 @@ export function searchAssets({ query, group }: { query?: string; group?: string 
     if (asset.deletedAt) return false;
     if (group && asset.group !== group) return false;
     if (!normalizedQuery) return true;
-    const haystack = [asset.name, asset.model, asset.serialNumber, asset.group ?? "", asset.location ?? ""]
+    const haystack = [
+      String(asset.assetNumber),
+      asset.name,
+      asset.model,
+      asset.serialNumber,
+      asset.group ?? "",
+      asset.location ?? "",
+    ]
       .join(" ")
       .toLowerCase();
     return haystack.includes(normalizedQuery);
@@ -444,6 +473,7 @@ export function createTicket(input: TicketInput): Ticket {
     completed: false,
     createdAt: new Date().toISOString(),
     assignedTo: null,
+    assetIds: [],
   };
   tickets.push(ticket);
   return ticket;
@@ -457,6 +487,10 @@ export function listTickets(): Ticket[] {
   });
 }
 
+export function getTicket(id: string): Ticket | undefined {
+  return tickets.find((t) => t.id === id);
+}
+
 export function setTicketCompleted(id: string, completed: boolean): void {
   const ticket = tickets.find((t) => t.id === id);
   if (ticket) ticket.completed = completed;
@@ -465,6 +499,27 @@ export function setTicketCompleted(id: string, completed: boolean): void {
 export function setTicketAssignee(id: string, assignedTo: string | null): void {
   const ticket = tickets.find((t) => t.id === id);
   if (ticket) ticket.assignedTo = assignedTo;
+}
+
+export function addAssetToTicket(ticketId: string, assetId: string): void {
+  const ticket = getTicket(ticketId);
+  if (!ticket) return;
+  if (!ticket.assetIds.includes(assetId)) {
+    ticket.assetIds.push(assetId);
+  }
+}
+
+export function removeAssetFromTicket(ticketId: string, assetId: string): void {
+  const ticket = getTicket(ticketId);
+  if (!ticket) return;
+  ticket.assetIds = ticket.assetIds.filter((id) => id !== assetId);
+}
+
+/** Resolves a ticket's linked asset IDs to full Asset records, silently dropping any that no longer exist. */
+export function getTicketAssets(ticketId: string): Asset[] {
+  const ticket = getTicket(ticketId);
+  if (!ticket) return [];
+  return ticket.assetIds.map((id) => getAsset(id)).filter((a): a is Asset => Boolean(a));
 }
 
 export type CustomOrderInput = {
@@ -518,19 +573,88 @@ export function setCustomOrderAssignee(id: string, assignedTo: string | null): v
   if (order) order.assignedTo = assignedTo;
 }
 
-/** Distinct assignee names in use across assets, tickets, and custom orders — one shared list for autocomplete. */
+/** Employee directory names, for the "Assigned to" autocomplete on assets/tickets/custom orders. */
 export function listAssignees(): string[] {
-  const names = new Set<string>();
-  for (const asset of assets) {
-    if (asset.assignedTo) names.add(asset.assignedTo);
+  return employees.map((e) => e.name).sort((a, b) => a.localeCompare(b));
+}
+
+function toPublicEmployee(e: Employee): PublicEmployee {
+  return { id: e.id, name: e.name, username: e.username, createdAt: e.createdAt };
+}
+
+export function listEmployees(): PublicEmployee[] {
+  return [...employees].map(toPublicEmployee).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getEmployee(id: string): PublicEmployee | undefined {
+  const employee = employees.find((e) => e.id === id);
+  return employee ? toPublicEmployee(employee) : undefined;
+}
+
+/** Full record including password hash — for verifying login, not for rendering. */
+export function findEmployeeByUsername(username: string): Employee | undefined {
+  return employees.find((e) => e.username.toLowerCase() === username.toLowerCase());
+}
+
+const MIN_PASSWORD_LENGTH = 8;
+
+function usernameTaken(username: string, excludeId?: string): boolean {
+  const trimmed = username.trim().toLowerCase();
+  if (trimmed === (process.env.ADMIN_USERNAME ?? "").toLowerCase()) return true;
+  return employees.some((e) => e.id !== excludeId && e.username.toLowerCase() === trimmed);
+}
+
+export type EmployeeResult = { ok: true; employee: PublicEmployee } | { ok: false; error: string };
+
+export function createEmployee(input: { name: string; username: string; password: string }): EmployeeResult {
+  const name = input.name.trim();
+  const username = input.username.trim();
+  if (!name || !username) return { ok: false, error: "Name and username are required." };
+  if (input.password.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
   }
-  for (const ticket of tickets) {
-    if (ticket.assignedTo) names.add(ticket.assignedTo);
+  if (usernameTaken(username)) return { ok: false, error: "That username is already taken." };
+
+  const { hash, salt } = hashPassword(input.password);
+  const employee: Employee = {
+    id: randomUUID(),
+    name,
+    username,
+    passwordHash: hash,
+    passwordSalt: salt,
+    createdAt: new Date().toISOString(),
+  };
+  employees.push(employee);
+  return { ok: true, employee: toPublicEmployee(employee) };
+}
+
+export function updateEmployee(
+  id: string,
+  input: { name: string; username: string; password?: string },
+): EmployeeResult {
+  const employee = employees.find((e) => e.id === id);
+  if (!employee) return { ok: false, error: "Employee not found." };
+  const name = input.name.trim();
+  const username = input.username.trim();
+  if (!name || !username) return { ok: false, error: "Name and username are required." };
+  if (usernameTaken(username, id)) return { ok: false, error: "That username is already taken." };
+  if (input.password) {
+    if (input.password.length < MIN_PASSWORD_LENGTH) {
+      return { ok: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
+    }
+    const { hash, salt } = hashPassword(input.password);
+    employee.passwordHash = hash;
+    employee.passwordSalt = salt;
   }
-  for (const order of customOrders) {
-    if (order.assignedTo) names.add(order.assignedTo);
-  }
-  return [...names].sort((a, b) => a.localeCompare(b));
+  employee.name = name;
+  employee.username = username;
+  return { ok: true, employee: toPublicEmployee(employee) };
+}
+
+/** Hard delete, not soft-delete — removing an employee should revoke their access immediately. */
+export function deleteEmployee(id: string): void {
+  const index = employees.findIndex((e) => e.id === id);
+  if (index !== -1) employees.splice(index, 1);
 }
 
 export function addAssetToCustomOrder(orderId: string, assetId: string): void {
@@ -562,6 +686,7 @@ export type PurchaseInput = {
   purchasedAt: string;
   notes: string | null;
   group: string | null;
+  assetId: string | null;
 };
 
 export function listPurchases(): Purchase[] {
@@ -584,6 +709,7 @@ export function createPurchase(input: PurchaseInput): Purchase {
     createdAt: new Date().toISOString(),
     group: input.group,
     deletedAt: null,
+    assetId: input.assetId,
   };
   purchases.push(purchase);
   return purchase;
@@ -599,6 +725,7 @@ export function updatePurchase(id: string, input: PurchaseInput): Purchase | und
   purchase.purchasedAt = input.purchasedAt;
   purchase.notes = input.notes;
   purchase.group = input.group;
+  purchase.assetId = input.assetId;
   return purchase;
 }
 

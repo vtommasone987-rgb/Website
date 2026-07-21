@@ -23,6 +23,8 @@ export type AssetStatus = "available" | "sold";
 
 export type Asset = {
   id: string;
+  /** Short sequential reference number (101, 102, ...) — auto-assigned at creation, not editable, never reused. */
+  assetNumber: number;
   name: string;
   model: string;
   serialNumber: string;
@@ -63,6 +65,8 @@ export type Ticket = {
   createdAt: string;
   /** Employee handling this ticket, if any. Freeform, optional, set by admin staff (not the submitter). */
   assignedTo: string | null;
+  /** Inventory assets this ticket is about, if any — e.g. the specific unit being repaired. */
+  assetIds: string[];
 };
 
 export type CustomOrderCategory = "pc-build" | "laptop" | "tablet" | "other";
@@ -102,4 +106,29 @@ export type Purchase = {
   group: string | null;
   /** Soft-delete marker — set when "deleted" from the UI so it can be restored from Trash. Null means active. */
   deletedAt: string | null;
+  /** The single inventory asset this purchase relates to, if any — e.g. a part bought to repair a specific asset. */
+  assetId: string | null;
+};
+
+/**
+ * An employee who can sign into /admin with their own username/password, separate
+ * from the single shared ADMIN_USERNAME/ADMIN_PASSWORD in .env.local. No soft-delete
+ * here (unlike Asset/Purchase) — removing an employee should revoke their access
+ * immediately, not sit recoverable in Trash.
+ */
+export type Employee = {
+  id: string;
+  name: string;
+  username: string;
+  passwordHash: string;
+  passwordSalt: string;
+  createdAt: string;
+};
+
+/** Employee shape safe to render in the UI — never send passwordHash/passwordSalt to a page. */
+export type PublicEmployee = {
+  id: string;
+  name: string;
+  username: string;
+  createdAt: string;
 };
