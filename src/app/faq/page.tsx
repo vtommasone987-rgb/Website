@@ -21,17 +21,27 @@ export default function FaqPage() {
   return (
     <div className="flex flex-col gap-8 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Frequently asked questions</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Frequently asked questions</h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          Don&apos;t see your question here? <a href="/contact" className="text-indigo-600 underline dark:text-indigo-400">Contact us</a>.
+          Don&apos;t see your question here?{" "}
+          <a href="/contact" className="font-medium text-indigo-600 underline underline-offset-2 dark:text-indigo-400">
+            Contact us
+          </a>
+          .
         </p>
       </div>
 
-      <div className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+      <div className="flex flex-col gap-3">
         {faqs.map((faq) => (
-          <div key={faq.q} className="py-4">
-            <h2 className="font-medium">{faq.q}</h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{faq.a}</p>
+          <div
+            key={faq.q}
+            className="rounded-xl border border-zinc-200 p-5 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
+          >
+            <h2 className="flex items-start gap-2 font-semibold">
+              <span className="text-indigo-500 dark:text-indigo-400">Q.</span>
+              {faq.q}
+            </h2>
+            <p className="mt-2 pl-5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{faq.a}</p>
           </div>
         ))}
       </div>

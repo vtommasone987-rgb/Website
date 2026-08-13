@@ -11,14 +11,14 @@ export function PageNav({ current }: { current: 1 | 2 }) {
       <Link
         href={other}
         aria-label="Previous page"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-50"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 hover:shadow-md dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-50"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Link>
 
-      <div className="flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-2 dark:border-zinc-800">
+      <div className="flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-2 shadow-sm dark:border-zinc-800">
         {PAGES.map((href, i) => {
           const pageNum = i + 1;
           const active = pageNum === current;
@@ -39,7 +39,7 @@ export function PageNav({ current }: { current: 1 | 2 }) {
       <Link
         href={other}
         aria-label="Next page"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-50"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 hover:shadow-md dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-50"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

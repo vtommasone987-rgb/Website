@@ -57,7 +57,7 @@ export default function WhatWeDoPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">What We Do</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">What We Do</h1>
         <p className="mt-2 max-w-xl text-zinc-600 dark:text-zinc-400">
           A small team that does a few things well, rather than everything at once.
         </p>
@@ -67,16 +67,16 @@ export default function WhatWeDoPage() {
         {services.map((service) => (
           <div
             key={service.title}
-            className="flex flex-col items-center gap-4 rounded-xl border border-zinc-200 p-6 text-center dark:border-zinc-800"
+            className="flex flex-col items-center gap-4 rounded-2xl border border-zinc-200 p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:border-zinc-800"
           >
-            <span className="flex h-16 w-16 items-center justify-center rounded-full border border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
               {service.icon}
             </span>
             <h2 className="text-lg font-semibold">{service.title}</h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{service.description}</p>
             <Link
               href={service.href}
-              className="mt-auto rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-orange-400"
+              className="mt-auto rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-zinc-900 shadow-md shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg"
             >
               {service.cta}
             </Link>

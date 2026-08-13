@@ -1,5 +1,8 @@
 import { createTicketAction } from "./actions";
 
+const inputClass =
+  "rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-900";
+
 export default async function ContactPage({
   searchParams,
 }: {
@@ -10,30 +13,38 @@ export default async function ContactPage({
   return (
     <div className="flex flex-col gap-8 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Contact us</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Contact us</h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
           Questions about a listing, an order, or anything else — reach out and we&apos;ll get back to you.
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">Address</h2>
-          <p className="text-lg">7250 Commerce Drive. Mentor, Ohio 44060</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">
+            Address
+          </h2>
+          <p className="mt-1 font-medium">7250 Commerce Drive. Mentor, Ohio 44060</p>
         </div>
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">Email</h2>
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">
+            Email
+          </h2>
           {/* PLACEHOLDER — replace with your real support address */}
-          <p className="text-lg">support@example.com</p>
+          <p className="mt-1 font-medium">support@example.com</p>
         </div>
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">Phone</h2>
-          <p className="text-lg">(440) 290-9160</p>
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">
+            Phone
+          </h2>
+          <p className="mt-1 font-medium">(440) 290-9160</p>
         </div>
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">Hours</h2>
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">
+            Hours
+          </h2>
           {/* PLACEHOLDER — replace with your real hours */}
-          <p className="text-lg">Mon–Fri, 9am–5pm</p>
+          <p className="mt-1 font-medium">Mon–Fri, 9am–5pm</p>
         </div>
       </div>
 
@@ -56,7 +67,10 @@ export default async function ContactPage({
           </div>
         )}
 
-        <form action={createTicketAction} className="flex flex-col gap-4 rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
+        <form
+          action={createTicketAction}
+          className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-6 shadow-sm dark:border-zinc-800"
+        >
           {/* Honeypot — real users never see this field (hidden via CSS below), so
               anything that fills it in is almost certainly a bot. */}
           <input
@@ -70,30 +84,17 @@ export default async function ContactPage({
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1 text-sm font-medium">
               Name
-              <input
-                name="name"
-                required
-                className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              />
+              <input name="name" required className={inputClass} />
             </label>
             <label className="flex flex-col gap-1 text-sm font-medium">
               Email
-              <input
-                type="email"
-                name="email"
-                required
-                className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              />
+              <input type="email" name="email" required className={inputClass} />
             </label>
           </div>
 
           <label className="flex flex-col gap-1 text-sm font-medium">
             What is this about?
-            <select
-              name="category"
-              defaultValue="repair"
-              className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            >
+            <select name="category" defaultValue="repair" className={inputClass}>
               <option value="warranty">Warranty claim</option>
               <option value="repair">Repair request</option>
               <option value="feedback">Feedback</option>
@@ -108,13 +109,13 @@ export default async function ContactPage({
               required
               rows={4}
               placeholder="Describe the issue or your feedback…"
-              className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className={inputClass}
             />
           </label>
 
           <button
             type="submit"
-            className="self-start rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+            className="self-start rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:-translate-y-0.5 hover:bg-indigo-500 hover:shadow-lg"
           >
             Submit ticket
           </button>
