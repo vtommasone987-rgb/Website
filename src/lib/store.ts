@@ -1,26 +1,31 @@
-import { randomUUID } from "crypto";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "./prisma";
+import { hashPassword } from "./password";
 import type {
   Asset,
-  AssetImage,
+  AssetStatus,
   CustomOrder,
   CustomOrderCategory,
   Employee,
-  Part,
   PublicEmployee,
   Purchase,
   Sale,
-  StorageDevice,
   StorageType,
   Ticket,
   TicketCategory,
 } from "./types";
-import { hashPassword } from "./password";
 
 /**
- * In-memory data store standing in for the database while the UI is under review.
- * Every function here has a signature that will map cleanly onto Prisma queries
- * later, so swapping this file's internals for real persistence shouldn't require
- * changing any page or action that calls it. Data resets whenever the dev server restarts.
+ * Data access layer over Postgres (via Prisma).
+ *
+ * Every function returns the plain TypeScript shapes in ./types rather than raw
+ * Prisma rows, so pages and actions don't depend on the ORM. The main conversion
+ * is dates: Prisma hands back `Date` objects, but the app passes ISO strings
+ * around and formats them with the helpers in ./format, so rows are mapped to
+ * strings here at the boundary.
+ *
+ * One deliberate exception: Purchase.purchasedAt is a calendar date stored as a
+ * "YYYY-MM-DD" string, not a timestamp — see the note in prisma/schema.prisma.
  */
 
 export const TRASH_RETENTION_DAYS = 7;
@@ -32,279 +37,83 @@ export function trashExpiryDate(deletedAt: string): string {
 }
 
 /**
- * Lazy sweep — there's no background job/cron here (no server to run one on
- * yet), so expired trash is purged whenever the Trash page is viewed rather
- * than on a schedule. Once this moves to a real deployment, pair this with
- * (or replace it with) a Vercel Cron job hitting a route that calls this, so
- * purging doesn't depend on someone happening to open the Trash page.
+ * Lazy sweep — there's no background job/cron here, so expired trash is purged
+ * whenever the Trash page is viewed rather than on a schedule. Once this is
+ * deployed, pair it with (or replace it by) a Vercel Cron job hitting a route
+ * that calls this, so purging doesn't depend on someone opening the Trash page.
  */
-function purgeExpiredTrash(): void {
-  const cutoff = Date.now() - TRASH_RETENTION_MS;
-  for (let i = assets.length - 1; i >= 0; i--) {
-    const deletedAt = assets[i].deletedAt;
-    if (deletedAt && new Date(deletedAt).getTime() < cutoff) assets.splice(i, 1);
-  }
-  for (let i = purchases.length - 1; i >= 0; i--) {
-    const deletedAt = purchases[i].deletedAt;
-    if (deletedAt && new Date(deletedAt).getTime() < cutoff) purchases.splice(i, 1);
-  }
+async function purgeExpiredTrash(): Promise<void> {
+  const cutoff = new Date(Date.now() - TRASH_RETENTION_MS);
+  await prisma.asset.deleteMany({ where: { deletedAt: { lt: cutoff } } });
+  await prisma.purchase.deleteMany({ where: { deletedAt: { lt: cutoff } } });
 }
 
-function image(url: string): AssetImage {
-  return { id: randomUUID(), url };
+// --- Assets ---------------------------------------------------------------
+
+const assetInclude = { parts: true, storageDevices: true, images: true } satisfies Prisma.AssetInclude;
+type AssetRow = Prisma.AssetGetPayload<{ include: typeof assetInclude }>;
+
+function toAsset(row: AssetRow): Asset {
+  return {
+    id: row.id,
+    assetNumber: row.assetNumber,
+    name: row.name,
+    model: row.model,
+    serialNumber: row.serialNumber,
+    priceCents: row.priceCents,
+    status: row.status as AssetStatus,
+    description: row.description,
+    parts: row.parts.map((p) => ({ id: p.id, name: p.name, serialNumber: p.serialNumber })),
+    storageDevices: row.storageDevices.map((d) => ({
+      id: d.id,
+      type: d.type as StorageType,
+      capacityGb: d.capacityGb,
+      serialNumber: d.serialNumber,
+    })),
+    images: row.images.map((i) => ({ id: i.id, url: i.url })),
+    createdAt: row.createdAt.toISOString(),
+    group: row.group,
+    location: row.location,
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+    assignedTo: row.assignedTo,
+  };
 }
 
-function part(name: string, serialNumber: string): Part {
-  return { id: randomUUID(), name, serialNumber };
+export async function listAssets(): Promise<Asset[]> {
+  const rows = await prisma.asset.findMany({
+    where: { deletedAt: null },
+    include: assetInclude,
+    orderBy: { assetNumber: "asc" },
+  });
+  return rows.map(toAsset);
 }
 
-function storageDevice(type: StorageType, capacityGb: number, serialNumber: string): StorageDevice {
-  return { id: randomUUID(), type, capacityGb, serialNumber };
+export async function listAvailableAssets(): Promise<Asset[]> {
+  const rows = await prisma.asset.findMany({
+    where: { deletedAt: null, status: "available" },
+    include: assetInclude,
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map(toAsset);
 }
 
-const assets: Asset[] = [
-  {
-    id: "asset-1",
-    assetNumber: 101,
-    name: "ThinkPad X1 Carbon Gen 9",
-    model: "20XW-CTO1WW",
-    serialNumber: "PF3K9J2A",
-    priceCents: 89900,
-    status: "available",
-    description:
-      "14\" business laptop, i7-1165G7, 16GB RAM, 512GB NVMe SSD. Light wear on the lid, keyboard and screen are excellent.",
-    parts: [part("Original 65W USB-C charger", "CHG-4471-A"), part("Extended battery pack", "BAT-9012-C")],
-    storageDevices: [storageDevice("nvme-ssd", 512, "SSD-TP-9911")],
-    images: [
-      image("https://picsum.photos/seed/thinkpad-1/800/600"),
-      image("https://picsum.photos/seed/thinkpad-2/800/600"),
-    ],
-    createdAt: "2026-06-02T14:00:00.000Z",
-    group: null,
-    location: "Office, Desk 2",
-    deletedAt: null,
-    assignedTo: null,
-  },
-  {
-    id: "asset-2",
-    assetNumber: 102,
-    name: "Canon EOS R5",
-    model: "EOS R5 Body",
-    serialNumber: "CN0834771",
-    priceCents: 249900,
-    status: "available",
-    description:
-      "Mirrorless full-frame body, ~8,200 shutter actuations. Comes with two batteries and the original box.",
-    parts: [
-      part("LP-E6NH battery #1", "BATT-6NH-001"),
-      part("LP-E6NH battery #2", "BATT-6NH-002"),
-      part("CFexpress card reader", "RDR-CFX-33"),
-    ],
-    storageDevices: [],
-    images: [
-      image("https://picsum.photos/seed/canon-1/800/600"),
-      image("https://picsum.photos/seed/canon-2/800/600"),
-      image("https://picsum.photos/seed/canon-3/800/600"),
-    ],
-    createdAt: "2026-06-10T09:30:00.000Z",
-    group: "Reserved: Sarah Kim",
-    location: "Warehouse A, Shelf 3",
-    deletedAt: null,
-    assignedTo: "Jordan Lee",
-  },
-  {
-    id: "asset-3",
-    assetNumber: 103,
-    name: "DeWalt 20V MAX Drill/Driver Kit",
-    model: "DCD791D2",
-    serialNumber: "DW22190456",
-    priceCents: 12900,
-    status: "available",
-    description: "Brushless drill/driver, two 2Ah batteries, charger, and hard case included.",
-    parts: [part("2Ah battery #1", "DCB203-A"), part("2Ah battery #2", "DCB203-B"), part("Fast charger", "DCB107-X")],
-    storageDevices: [],
-    images: [image("https://picsum.photos/seed/dewalt-1/800/600")],
-    createdAt: "2026-06-18T11:15:00.000Z",
-    group: "Recycle",
-    location: "Garage",
-    deletedAt: null,
-    assignedTo: null,
-  },
-  {
-    id: "asset-4",
-    assetNumber: 104,
-    name: "Dell PowerEdge R730 Server",
-    model: "PowerEdge R730",
-    serialNumber: "DPE730-88213",
-    priceCents: 64900,
-    status: "sold",
-    description: "2x Xeon E5-2680 v4, 128GB RAM, 8x 2.5\" bays populated with 600GB 10K SAS drives, dual PSU.",
-    parts: [
-      part("PSU #1", "PSU-750W-A"),
-      part("PSU #2", "PSU-750W-B"),
-      part("PERC H730 RAID controller", "H730-77102"),
-    ],
-    storageDevices: [
-      storageDevice("hdd", 600, "SAS-R730-01"),
-      storageDevice("hdd", 600, "SAS-R730-02"),
-    ],
-    images: [image("https://picsum.photos/seed/dell-server-1/800/600")],
-    createdAt: "2026-05-20T08:00:00.000Z",
-    group: null,
-    location: "Warehouse A, Shelf 1",
-    deletedAt: null,
-    assignedTo: null,
-  },
-  {
-    id: "asset-5",
-    assetNumber: 105,
-    name: "Herman Miller Aeron (Size B)",
-    model: "Aeron Remastered",
-    serialNumber: "HM-AER-33210",
-    priceCents: 39900,
-    status: "sold",
-    description: "Fully adjustable, PostureFit SL, graphite frame. No rips or stains.",
-    parts: [part("Adjustable lumbar support", "PFSL-4402")],
-    storageDevices: [],
-    images: [image("https://picsum.photos/seed/aeron-1/800/600")],
-    createdAt: "2026-05-25T16:45:00.000Z",
-    group: null,
-    location: "Office, Storage Closet",
-    deletedAt: null,
-    assignedTo: null,
-  },
-];
-
-// Next asset number to hand out — starts after the highest seeded number
-// (101–105) so new assets keep counting up from 106. Assigned once at
-// creation and never reused, even if the asset is later deleted.
-let nextAssetNumber = 106;
-
-// Groups are their own list rather than something only derived from assets in
-// use, so a new group can be created up front (e.g. before any asset is
-// assigned to it) instead of only appearing after typing it into an asset.
-const groups: string[] = ["Recycle", "Reserved: Sarah Kim"];
-
-const sales: Sale[] = [
-  {
-    id: "sale-1",
-    assetId: "asset-4",
-    assetName: "Dell PowerEdge R730 Server",
-    salePriceCents: 61000,
-    soldAt: "2026-06-28T13:20:00.000Z",
-  },
-  {
-    id: "sale-2",
-    assetId: "asset-5",
-    assetName: "Herman Miller Aeron (Size B)",
-    salePriceCents: 38500,
-    soldAt: "2026-07-05T10:05:00.000Z",
-  },
-];
-
-const tickets: Ticket[] = [
-  {
-    id: "ticket-1",
-    name: "Marcus Webb",
-    email: "marcus.webb@example.com",
-    category: "repair",
-    description: "The laptop I bought last month won't hold a charge past 20 minutes — might be a battery issue.",
-    completed: false,
-    createdAt: "2026-07-10T15:22:00.000Z",
-    assignedTo: "Sam Rivera",
-    assetIds: ["asset-1"],
-  },
-  {
-    id: "ticket-2",
-    name: "Priya Patel",
-    email: "priya.patel@example.com",
-    category: "warranty",
-    description: "Requesting a warranty check on a server PSU that started making a grinding noise.",
-    completed: true,
-    createdAt: "2026-07-02T09:10:00.000Z",
-    assignedTo: null,
-    assetIds: [],
-  },
-];
-
-const customOrders: CustomOrder[] = [
-  {
-    id: "order-1",
-    name: "Alicia Nguyen",
-    email: "alicia.nguyen@example.com",
-    category: "pc-build",
-    model: null,
-    quantity: 1,
-    details: "Looking for a workstation for video editing — 32GB+ RAM, fast NVMe storage, a solid GPU for Premiere.",
-    budget: "$1,500–$2,000",
-    completed: false,
-    createdAt: "2026-07-08T13:40:00.000Z",
-    assetIds: [],
-    assignedTo: null,
-  },
-  {
-    id: "order-2",
-    name: "Rachel Osei",
-    email: "rachel.osei@example.com",
-    category: "laptop",
-    model: "Dell Latitude 5440",
-    quantity: 12,
-    details: "Onboarding a new team — need 12 identical laptops, imaged the same, for new hires starting next month.",
-    budget: "$700–$900 each",
-    completed: false,
-    createdAt: "2026-07-12T10:05:00.000Z",
-    assetIds: ["asset-1"],
-    assignedTo: "Dana Kim",
-  },
-];
-
-const purchases: Purchase[] = [
-  {
-    id: "purchase-1",
-    item: "USB-C dock stations",
-    vendor: "CDW",
-    quantity: 5,
-    totalCostCents: 62450,
-    purchasedAt: "2026-06-20",
-    notes: "For the new hire onboarding kits.",
-    createdAt: "2026-06-20T16:00:00.000Z",
-    group: "IT Supplies",
-    deletedAt: null,
-    assetId: null,
-  },
-  {
-    id: "purchase-2",
-    item: "Precision screwdriver set",
-    vendor: "Amazon Business",
-    quantity: 2,
-    totalCostCents: 4598,
-    purchasedAt: "2026-07-01",
-    notes: null,
-    createdAt: "2026-07-01T12:30:00.000Z",
-    group: "Tools",
-    deletedAt: null,
-    assetId: null,
-  },
-];
-
-// Purchase groups are their own list, separate from asset groups (different
-// domain — expense/procurement categories, not inventory disposition).
-const purchaseGroups: string[] = ["IT Supplies", "Tools"];
-
-// No seed data here on purpose — unlike assets/purchases, employee accounts are
-// real login credentials, so the list starts empty for whoever sets this up.
-const employees: Employee[] = [];
-
-export function listAssets(): Asset[] {
-  return assets.filter((a) => !a.deletedAt);
+export async function getAsset(id: string): Promise<Asset | undefined> {
+  const row = await prisma.asset.findUnique({ where: { id }, include: assetInclude });
+  return row ? toAsset(row) : undefined;
 }
 
-export function listAvailableAssets(): Asset[] {
-  return assets.filter((a) => a.status === "available" && !a.deletedAt);
-}
-
-export function getAsset(id: string): Asset | undefined {
-  return assets.find((a) => a.id === id);
+/**
+ * Asset numbers for the given ids, keyed by id. Lets a table render a linked
+ * asset reference for many rows with one query instead of one lookup per row.
+ */
+export async function getAssetNumbers(ids: string[]): Promise<Map<string, number>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return new Map();
+  const rows = await prisma.asset.findMany({
+    where: { id: { in: unique } },
+    select: { id: true, assetNumber: true },
+  });
+  return new Map(rows.map((r) => [r.id, r.assetNumber]));
 }
 
 export type AssetInput = {
@@ -321,139 +130,191 @@ export type AssetInput = {
   assignedTo: string | null;
 };
 
-export function createAsset(input: AssetInput): Asset {
-  const asset: Asset = {
-    id: randomUUID(),
-    assetNumber: nextAssetNumber++,
-    name: input.name,
-    model: input.model,
-    serialNumber: input.serialNumber,
-    priceCents: input.priceCents,
-    description: input.description,
-    status: "available",
-    parts: input.parts.map((p) => part(p.name, p.serialNumber)),
-    storageDevices: input.storageDevices.map((d) => storageDevice(d.type, d.capacityGb, d.serialNumber)),
-    images: input.imageUrls.map(image),
-    createdAt: new Date().toISOString(),
-    group: input.group,
-    location: input.location,
-    deletedAt: null,
-    assignedTo: input.assignedTo,
-  };
-  assets.push(asset);
-  return asset;
+export async function createAsset(input: AssetInput): Promise<Asset> {
+  const row = await prisma.asset.create({
+    data: {
+      name: input.name,
+      model: input.model,
+      serialNumber: input.serialNumber,
+      priceCents: input.priceCents,
+      description: input.description,
+      status: "available",
+      group: input.group,
+      location: input.location,
+      assignedTo: input.assignedTo,
+      parts: { create: input.parts },
+      storageDevices: { create: input.storageDevices },
+      images: { create: input.imageUrls.map((url) => ({ url })) },
+    },
+    include: assetInclude,
+  });
+  return toAsset(row);
 }
 
-export function updateAsset(id: string, input: AssetInput): Asset | undefined {
-  const asset = getAsset(id);
-  if (!asset) return undefined;
-  asset.name = input.name;
-  asset.model = input.model;
-  asset.serialNumber = input.serialNumber;
-  asset.priceCents = input.priceCents;
-  asset.description = input.description;
-  asset.parts = input.parts.map((p) => part(p.name, p.serialNumber));
-  asset.storageDevices = input.storageDevices.map((d) => storageDevice(d.type, d.capacityGb, d.serialNumber));
-  asset.group = input.group;
-  asset.location = input.location;
-  asset.assignedTo = input.assignedTo;
-  if (input.imageUrls.length > 0) {
-    asset.images = input.imageUrls.map(image);
-  }
-  return asset;
+export async function updateAsset(id: string, input: AssetInput): Promise<Asset | undefined> {
+  const existing = await prisma.asset.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return undefined;
+
+  // Parts and storage devices are fully replaced by whatever the form submitted,
+  // matching how the form re-sends every row. Images are only replaced when new
+  // ones were uploaded, so saving the form without picking files keeps the
+  // existing photos.
+  const row = await prisma.asset.update({
+    where: { id },
+    data: {
+      name: input.name,
+      model: input.model,
+      serialNumber: input.serialNumber,
+      priceCents: input.priceCents,
+      description: input.description,
+      group: input.group,
+      location: input.location,
+      assignedTo: input.assignedTo,
+      parts: { deleteMany: {}, create: input.parts },
+      storageDevices: { deleteMany: {}, create: input.storageDevices },
+      ...(input.imageUrls.length > 0
+        ? { images: { deleteMany: {}, create: input.imageUrls.map((url) => ({ url })) } }
+        : {}),
+    },
+    include: assetInclude,
+  });
+  return toAsset(row);
 }
 
 /** Distinct locations currently in use, for the location field's autocomplete. */
-export function listLocations(): string[] {
-  const locations = new Set<string>();
-  for (const asset of assets) {
-    if (asset.location) locations.add(asset.location);
-  }
-  return [...locations].sort((a, b) => a.localeCompare(b));
+export async function listLocations(): Promise<string[]> {
+  const rows = await prisma.asset.findMany({
+    where: { location: { not: null } },
+    select: { location: true },
+    distinct: ["location"],
+  });
+  return rows
+    .map((r) => r.location)
+    .filter((l): l is string => Boolean(l))
+    .sort((a, b) => a.localeCompare(b));
 }
 
-export function listGroups(): string[] {
-  return [...groups].sort((a, b) => a.localeCompare(b));
+export async function listGroups(): Promise<string[]> {
+  const rows = await prisma.assetGroup.findMany();
+  return rows.map((g) => g.name).sort((a, b) => a.localeCompare(b));
 }
 
 /** Returns false (and adds nothing) if the name is blank or already exists, case-insensitively. */
-export function createGroup(name: string): boolean {
+export async function createGroup(name: string): Promise<boolean> {
   const trimmed = name.trim();
   if (!trimmed) return false;
-  const alreadyExists = groups.some((g) => g.toLowerCase() === trimmed.toLowerCase());
-  if (alreadyExists) return false;
-  groups.push(trimmed);
+  const existing = await prisma.assetGroup.findFirst({
+    where: { name: { equals: trimmed, mode: "insensitive" } },
+  });
+  if (existing) return false;
+  await prisma.assetGroup.create({ data: { name: trimmed } });
   return true;
 }
 
-export function searchAssets({ query, group }: { query?: string; group?: string }): Asset[] {
-  const normalizedQuery = query?.trim().toLowerCase();
-  return assets.filter((asset) => {
-    if (asset.deletedAt) return false;
-    if (group && asset.group !== group) return false;
-    if (!normalizedQuery) return true;
-    const haystack = [
-      String(asset.assetNumber),
-      asset.name,
-      asset.model,
-      asset.serialNumber,
-      asset.group ?? "",
-      asset.location ?? "",
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(normalizedQuery);
-  });
+export async function searchAssets({ query, group }: { query?: string; group?: string }): Promise<Asset[]> {
+  const trimmed = query?.trim();
+  const where: Prisma.AssetWhereInput = { deletedAt: null };
+  if (group) where.group = group;
+
+  if (trimmed) {
+    const like = { contains: trimmed, mode: "insensitive" } as const;
+    const asNumber = Number(trimmed);
+    where.OR = [
+      { name: like },
+      { model: like },
+      { serialNumber: like },
+      { group: like },
+      { location: like },
+      // The asset number is an integer column, so it's matched exactly rather
+      // than as a substring — searching "103" finds #103.
+      ...(Number.isInteger(asNumber) ? [{ assetNumber: asNumber }] : []),
+    ];
+  }
+
+  const rows = await prisma.asset.findMany({ where, include: assetInclude, orderBy: { assetNumber: "asc" } });
+  return rows.map(toAsset);
 }
 
 /** Soft delete — hides the asset from normal views but keeps it around so it can be restored from Trash. */
-export function deleteAsset(id: string): void {
-  const asset = getAsset(id);
-  if (asset) asset.deletedAt = new Date().toISOString();
+export async function deleteAsset(id: string): Promise<void> {
+  await prisma.asset.updateMany({ where: { id }, data: { deletedAt: new Date() } });
 }
 
-export function restoreAsset(id: string): void {
-  const asset = getAsset(id);
-  if (asset) asset.deletedAt = null;
+export async function restoreAsset(id: string): Promise<void> {
+  await prisma.asset.updateMany({ where: { id }, data: { deletedAt: null } });
 }
 
 /** Actually removes the asset — only reachable from the Trash page's "Delete forever". */
-export function permanentlyDeleteAsset(id: string): void {
-  const index = assets.findIndex((a) => a.id === id);
-  if (index !== -1) assets.splice(index, 1);
+export async function permanentlyDeleteAsset(id: string): Promise<void> {
+  await prisma.asset.deleteMany({ where: { id } });
 }
 
-export function listDeletedAssets(): Asset[] {
-  purgeExpiredTrash();
-  return assets
-    .filter((a) => a.deletedAt)
-    .sort((a, b) => ((a.deletedAt ?? "") < (b.deletedAt ?? "") ? 1 : -1));
+export async function listDeletedAssets(): Promise<Asset[]> {
+  await purgeExpiredTrash();
+  const rows = await prisma.asset.findMany({
+    where: { deletedAt: { not: null } },
+    include: assetInclude,
+    orderBy: { deletedAt: "desc" },
+  });
+  return rows.map(toAsset);
 }
 
-export function markSold(id: string, salePriceCents: number): Sale | undefined {
-  const asset = getAsset(id);
+export async function markSold(id: string, salePriceCents: number): Promise<Sale | undefined> {
+  const asset = await prisma.asset.findUnique({ where: { id }, select: { id: true, name: true } });
   if (!asset) return undefined;
-  asset.status = "sold";
-  const sale: Sale = {
-    id: randomUUID(),
-    assetId: asset.id,
-    assetName: asset.name,
-    salePriceCents,
-    soldAt: new Date().toISOString(),
+
+  // One transaction so a sale is never recorded without the asset also being
+  // marked sold (or vice versa).
+  const [, sale] = await prisma.$transaction([
+    prisma.asset.update({ where: { id }, data: { status: "sold" } }),
+    prisma.sale.create({ data: { assetId: asset.id, assetName: asset.name, salePriceCents } }),
+  ]);
+
+  return {
+    id: sale.id,
+    assetId: sale.assetId ?? "",
+    assetName: sale.assetName,
+    salePriceCents: sale.salePriceCents,
+    soldAt: sale.soldAt.toISOString(),
   };
-  sales.push(sale);
-  return sale;
 }
 
-export function listSales(): Sale[] {
-  return [...sales].sort((a, b) => (a.soldAt < b.soldAt ? 1 : -1));
+export async function listSales(): Promise<Sale[]> {
+  const rows = await prisma.sale.findMany({ orderBy: { soldAt: "desc" } });
+  return rows.map((s) => ({
+    id: s.id,
+    assetId: s.assetId ?? "",
+    assetName: s.assetName,
+    salePriceCents: s.salePriceCents,
+    soldAt: s.soldAt.toISOString(),
+  }));
 }
 
-export function salesSummary() {
-  const totalRevenueCents = sales.reduce((sum, s) => sum + s.salePriceCents, 0);
-  const totalSales = sales.length;
+export async function salesSummary() {
+  const result = await prisma.sale.aggregate({ _sum: { salePriceCents: true }, _count: true });
+  const totalRevenueCents = result._sum.salePriceCents ?? 0;
+  const totalSales = result._count;
   const avgSaleCents = totalSales ? Math.round(totalRevenueCents / totalSales) : 0;
   return { totalRevenueCents, totalSales, avgSaleCents };
+}
+
+// --- Tickets --------------------------------------------------------------
+
+const linkedAssetIds = { assets: { select: { id: true } } } satisfies Prisma.TicketInclude;
+type TicketRow = Prisma.TicketGetPayload<{ include: typeof linkedAssetIds }>;
+
+function toTicket(row: TicketRow): Ticket {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    category: row.category as TicketCategory,
+    description: row.description,
+    completed: row.completed,
+    createdAt: row.createdAt.toISOString(),
+    assignedTo: row.assignedTo,
+    assetIds: row.assets.map((a) => a.id),
+  };
 }
 
 export type TicketInput = {
@@ -463,63 +324,70 @@ export type TicketInput = {
   description: string;
 };
 
-export function createTicket(input: TicketInput): Ticket {
-  const ticket: Ticket = {
-    id: randomUUID(),
-    name: input.name,
-    email: input.email,
-    category: input.category,
-    description: input.description,
-    completed: false,
-    createdAt: new Date().toISOString(),
-    assignedTo: null,
-    assetIds: [],
-  };
-  tickets.push(ticket);
-  return ticket;
+export async function createTicket(input: TicketInput): Promise<Ticket> {
+  const row = await prisma.ticket.create({ data: { ...input }, include: linkedAssetIds });
+  return toTicket(row);
 }
 
-export function listTickets(): Ticket[] {
-  // Open tickets first (newest first within each group), so the queue reads top-to-bottom by what's left to do.
-  return [...tickets].sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    return a.createdAt < b.createdAt ? 1 : -1;
+export async function listTickets(): Promise<Ticket[]> {
+  // Open tickets first (newest first within each group), so the queue reads
+  // top-to-bottom by what's left to do.
+  const rows = await prisma.ticket.findMany({
+    include: linkedAssetIds,
+    orderBy: [{ completed: "asc" }, { createdAt: "desc" }],
   });
+  return rows.map(toTicket);
 }
 
-export function getTicket(id: string): Ticket | undefined {
-  return tickets.find((t) => t.id === id);
+export async function getTicket(id: string): Promise<Ticket | undefined> {
+  const row = await prisma.ticket.findUnique({ where: { id }, include: linkedAssetIds });
+  return row ? toTicket(row) : undefined;
 }
 
-export function setTicketCompleted(id: string, completed: boolean): void {
-  const ticket = tickets.find((t) => t.id === id);
-  if (ticket) ticket.completed = completed;
+export async function setTicketCompleted(id: string, completed: boolean): Promise<void> {
+  await prisma.ticket.updateMany({ where: { id }, data: { completed } });
 }
 
-export function setTicketAssignee(id: string, assignedTo: string | null): void {
-  const ticket = tickets.find((t) => t.id === id);
-  if (ticket) ticket.assignedTo = assignedTo;
+export async function setTicketAssignee(id: string, assignedTo: string | null): Promise<void> {
+  await prisma.ticket.updateMany({ where: { id }, data: { assignedTo } });
 }
 
-export function addAssetToTicket(ticketId: string, assetId: string): void {
-  const ticket = getTicket(ticketId);
-  if (!ticket) return;
-  if (!ticket.assetIds.includes(assetId)) {
-    ticket.assetIds.push(assetId);
-  }
+export async function addAssetToTicket(ticketId: string, assetId: string): Promise<void> {
+  await prisma.ticket.update({ where: { id: ticketId }, data: { assets: { connect: { id: assetId } } } });
 }
 
-export function removeAssetFromTicket(ticketId: string, assetId: string): void {
-  const ticket = getTicket(ticketId);
-  if (!ticket) return;
-  ticket.assetIds = ticket.assetIds.filter((id) => id !== assetId);
+export async function removeAssetFromTicket(ticketId: string, assetId: string): Promise<void> {
+  await prisma.ticket.update({ where: { id: ticketId }, data: { assets: { disconnect: { id: assetId } } } });
 }
 
-/** Resolves a ticket's linked asset IDs to full Asset records, silently dropping any that no longer exist. */
-export function getTicketAssets(ticketId: string): Asset[] {
-  const ticket = getTicket(ticketId);
-  if (!ticket) return [];
-  return ticket.assetIds.map((id) => getAsset(id)).filter((a): a is Asset => Boolean(a));
+/** Resolves a ticket's linked assets to full Asset records. */
+export async function getTicketAssets(ticketId: string): Promise<Asset[]> {
+  const row = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { assets: { include: assetInclude, orderBy: { assetNumber: "asc" } } },
+  });
+  return row ? row.assets.map(toAsset) : [];
+}
+
+// --- Custom orders --------------------------------------------------------
+
+type CustomOrderRow = Prisma.CustomOrderGetPayload<{ include: { assets: { select: { id: true } } } }>;
+
+function toCustomOrder(row: CustomOrderRow): CustomOrder {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    category: row.category as CustomOrderCategory,
+    model: row.model,
+    quantity: row.quantity,
+    details: row.details,
+    budget: row.budget,
+    completed: row.completed,
+    createdAt: row.createdAt.toISOString(),
+    assetIds: row.assets.map((a) => a.id),
+    assignedTo: row.assignedTo,
+  };
 }
 
 export type CustomOrderInput = {
@@ -532,150 +400,171 @@ export type CustomOrderInput = {
   budget: string | null;
 };
 
-export function createCustomOrder(input: CustomOrderInput): CustomOrder {
-  const order: CustomOrder = {
-    id: randomUUID(),
-    name: input.name,
-    email: input.email,
-    category: input.category,
-    model: input.model,
-    quantity: input.quantity,
-    details: input.details,
-    budget: input.budget,
-    completed: false,
-    createdAt: new Date().toISOString(),
-    assetIds: [],
-    assignedTo: null,
-  };
-  customOrders.push(order);
-  return order;
+export async function createCustomOrder(input: CustomOrderInput): Promise<CustomOrder> {
+  const row = await prisma.customOrder.create({ data: { ...input }, include: linkedAssetIds });
+  return toCustomOrder(row);
 }
 
-export function listCustomOrders(): CustomOrder[] {
+export async function listCustomOrders(): Promise<CustomOrder[]> {
   // Same ordering as listTickets(): open first, newest first within each group.
-  return [...customOrders].sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    return a.createdAt < b.createdAt ? 1 : -1;
+  const rows = await prisma.customOrder.findMany({
+    include: linkedAssetIds,
+    orderBy: [{ completed: "asc" }, { createdAt: "desc" }],
   });
+  return rows.map(toCustomOrder);
 }
 
-export function getCustomOrder(id: string): CustomOrder | undefined {
-  return customOrders.find((o) => o.id === id);
+export async function getCustomOrder(id: string): Promise<CustomOrder | undefined> {
+  const row = await prisma.customOrder.findUnique({ where: { id }, include: linkedAssetIds });
+  return row ? toCustomOrder(row) : undefined;
 }
 
-export function setCustomOrderCompleted(id: string, completed: boolean): void {
-  const order = customOrders.find((o) => o.id === id);
-  if (order) order.completed = completed;
+export async function setCustomOrderCompleted(id: string, completed: boolean): Promise<void> {
+  await prisma.customOrder.updateMany({ where: { id }, data: { completed } });
 }
 
-export function setCustomOrderAssignee(id: string, assignedTo: string | null): void {
-  const order = customOrders.find((o) => o.id === id);
-  if (order) order.assignedTo = assignedTo;
+export async function setCustomOrderAssignee(id: string, assignedTo: string | null): Promise<void> {
+  await prisma.customOrder.updateMany({ where: { id }, data: { assignedTo } });
 }
+
+export async function addAssetToCustomOrder(orderId: string, assetId: string): Promise<void> {
+  await prisma.customOrder.update({ where: { id: orderId }, data: { assets: { connect: { id: assetId } } } });
+}
+
+export async function removeAssetFromCustomOrder(orderId: string, assetId: string): Promise<void> {
+  await prisma.customOrder.update({ where: { id: orderId }, data: { assets: { disconnect: { id: assetId } } } });
+}
+
+/** Resolves an order's linked assets to full Asset records. */
+export async function getCustomOrderAssets(orderId: string): Promise<Asset[]> {
+  const row = await prisma.customOrder.findUnique({
+    where: { id: orderId },
+    select: { assets: { include: assetInclude, orderBy: { assetNumber: "asc" } } },
+  });
+  return row ? row.assets.map(toAsset) : [];
+}
+
+// --- Employees ------------------------------------------------------------
 
 /** Employee directory names, for the "Assigned to" autocomplete on assets/tickets/custom orders. */
-export function listAssignees(): string[] {
-  return employees.map((e) => e.name).sort((a, b) => a.localeCompare(b));
+export async function listAssignees(): Promise<string[]> {
+  const rows = await prisma.employee.findMany({ select: { name: true }, orderBy: { name: "asc" } });
+  return rows.map((e) => e.name);
 }
 
-function toPublicEmployee(e: Employee): PublicEmployee {
-  return { id: e.id, name: e.name, username: e.username, createdAt: e.createdAt };
+export async function listEmployees(): Promise<PublicEmployee[]> {
+  const rows = await prisma.employee.findMany({
+    select: { id: true, name: true, username: true, createdAt: true },
+    orderBy: { name: "asc" },
+  });
+  return rows.map((e) => ({ ...e, createdAt: e.createdAt.toISOString() }));
 }
 
-export function listEmployees(): PublicEmployee[] {
-  return [...employees].map(toPublicEmployee).sort((a, b) => a.name.localeCompare(b.name));
-}
-
-export function getEmployee(id: string): PublicEmployee | undefined {
-  const employee = employees.find((e) => e.id === id);
-  return employee ? toPublicEmployee(employee) : undefined;
+export async function getEmployee(id: string): Promise<PublicEmployee | undefined> {
+  const row = await prisma.employee.findUnique({
+    where: { id },
+    select: { id: true, name: true, username: true, createdAt: true },
+  });
+  return row ? { ...row, createdAt: row.createdAt.toISOString() } : undefined;
 }
 
 /** Full record including password hash — for verifying login, not for rendering. */
-export function findEmployeeByUsername(username: string): Employee | undefined {
-  return employees.find((e) => e.username.toLowerCase() === username.toLowerCase());
+export async function findEmployeeByUsername(username: string): Promise<Employee | undefined> {
+  const row = await prisma.employee.findFirst({
+    where: { username: { equals: username, mode: "insensitive" } },
+  });
+  return row ? { ...row, createdAt: row.createdAt.toISOString() } : undefined;
 }
 
 const MIN_PASSWORD_LENGTH = 8;
 
-function usernameTaken(username: string, excludeId?: string): boolean {
-  const trimmed = username.trim().toLowerCase();
-  if (trimmed === (process.env.ADMIN_USERNAME ?? "").toLowerCase()) return true;
-  return employees.some((e) => e.id !== excludeId && e.username.toLowerCase() === trimmed);
+async function usernameTaken(username: string, excludeId?: string): Promise<boolean> {
+  const trimmed = username.trim();
+  // The shared owner login isn't in this table, so guard it separately —
+  // otherwise an employee could register it and shadow the owner account.
+  if (trimmed.toLowerCase() === (process.env.ADMIN_USERNAME ?? "").toLowerCase()) return true;
+  const existing = await prisma.employee.findFirst({
+    where: { username: { equals: trimmed, mode: "insensitive" }, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    select: { id: true },
+  });
+  return Boolean(existing);
 }
 
 export type EmployeeResult = { ok: true; employee: PublicEmployee } | { ok: false; error: string };
 
-export function createEmployee(input: { name: string; username: string; password: string }): EmployeeResult {
+export async function createEmployee(input: {
+  name: string;
+  username: string;
+  password: string;
+}): Promise<EmployeeResult> {
   const name = input.name.trim();
   const username = input.username.trim();
   if (!name || !username) return { ok: false, error: "Name and username are required." };
   if (input.password.length < MIN_PASSWORD_LENGTH) {
     return { ok: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
   }
-  if (usernameTaken(username)) return { ok: false, error: "That username is already taken." };
+  if (await usernameTaken(username)) return { ok: false, error: "That username is already taken." };
 
   const { hash, salt } = hashPassword(input.password);
-  const employee: Employee = {
-    id: randomUUID(),
-    name,
-    username,
-    passwordHash: hash,
-    passwordSalt: salt,
-    createdAt: new Date().toISOString(),
-  };
-  employees.push(employee);
-  return { ok: true, employee: toPublicEmployee(employee) };
+  const row = await prisma.employee.create({
+    data: { name, username, passwordHash: hash, passwordSalt: salt },
+    select: { id: true, name: true, username: true, createdAt: true },
+  });
+  return { ok: true, employee: { ...row, createdAt: row.createdAt.toISOString() } };
 }
 
-export function updateEmployee(
+export async function updateEmployee(
   id: string,
   input: { name: string; username: string; password?: string },
-): EmployeeResult {
-  const employee = employees.find((e) => e.id === id);
-  if (!employee) return { ok: false, error: "Employee not found." };
+): Promise<EmployeeResult> {
+  const existing = await prisma.employee.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return { ok: false, error: "Employee not found." };
+
   const name = input.name.trim();
   const username = input.username.trim();
   if (!name || !username) return { ok: false, error: "Name and username are required." };
-  if (usernameTaken(username, id)) return { ok: false, error: "That username is already taken." };
+  if (await usernameTaken(username, id)) return { ok: false, error: "That username is already taken." };
+
+  let credentials: { passwordHash: string; passwordSalt: string } | undefined;
   if (input.password) {
     if (input.password.length < MIN_PASSWORD_LENGTH) {
       return { ok: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
     }
     const { hash, salt } = hashPassword(input.password);
-    employee.passwordHash = hash;
-    employee.passwordSalt = salt;
+    credentials = { passwordHash: hash, passwordSalt: salt };
   }
-  employee.name = name;
-  employee.username = username;
-  return { ok: true, employee: toPublicEmployee(employee) };
+
+  const row = await prisma.employee.update({
+    where: { id },
+    data: { name, username, ...credentials },
+    select: { id: true, name: true, username: true, createdAt: true },
+  });
+  return { ok: true, employee: { ...row, createdAt: row.createdAt.toISOString() } };
 }
 
 /** Hard delete, not soft-delete — removing an employee should revoke their access immediately. */
-export function deleteEmployee(id: string): void {
-  const index = employees.findIndex((e) => e.id === id);
-  if (index !== -1) employees.splice(index, 1);
+export async function deleteEmployee(id: string): Promise<void> {
+  await prisma.employee.deleteMany({ where: { id } });
 }
 
-export function addAssetToCustomOrder(orderId: string, assetId: string): void {
-  const order = getCustomOrder(orderId);
-  if (!order) return;
-  if (!order.assetIds.includes(assetId)) {
-    order.assetIds.push(assetId);
-  }
-}
+// --- Purchases ------------------------------------------------------------
 
-export function removeAssetFromCustomOrder(orderId: string, assetId: string): void {
-  const order = getCustomOrder(orderId);
-  if (!order) return;
-  order.assetIds = order.assetIds.filter((id) => id !== assetId);
-}
+type PurchaseRow = Prisma.PurchaseGetPayload<object>;
 
-/** Resolves an order's linked asset IDs to full Asset records, silently dropping any that no longer exist. */
-export function getCustomOrderAssets(orderId: string): Asset[] {
-  const order = getCustomOrder(orderId);
-  if (!order) return [];
-  return order.assetIds.map((id) => getAsset(id)).filter((a): a is Asset => Boolean(a));
+function toPurchase(row: PurchaseRow): Purchase {
+  return {
+    id: row.id,
+    item: row.item,
+    vendor: row.vendor,
+    quantity: row.quantity,
+    totalCostCents: row.totalCostCents,
+    purchasedAt: row.purchasedAt,
+    notes: row.notes,
+    createdAt: row.createdAt.toISOString(),
+    group: row.group,
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+    assetId: row.assetId,
+  };
 }
 
 export type PurchaseInput = {
@@ -689,101 +578,96 @@ export type PurchaseInput = {
   assetId: string | null;
 };
 
-export function listPurchases(): Purchase[] {
-  return purchases.filter((p) => !p.deletedAt).sort((a, b) => (a.purchasedAt < b.purchasedAt ? 1 : -1));
+export async function listPurchases(): Promise<Purchase[]> {
+  const rows = await prisma.purchase.findMany({
+    where: { deletedAt: null },
+    orderBy: { purchasedAt: "desc" },
+  });
+  return rows.map(toPurchase);
 }
 
-export function getPurchase(id: string): Purchase | undefined {
-  return purchases.find((p) => p.id === id);
+export async function getPurchase(id: string): Promise<Purchase | undefined> {
+  const row = await prisma.purchase.findUnique({ where: { id } });
+  return row ? toPurchase(row) : undefined;
 }
 
-export function createPurchase(input: PurchaseInput): Purchase {
-  const purchase: Purchase = {
-    id: randomUUID(),
-    item: input.item,
-    vendor: input.vendor,
-    quantity: input.quantity,
-    totalCostCents: input.totalCostCents,
-    purchasedAt: input.purchasedAt,
-    notes: input.notes,
-    createdAt: new Date().toISOString(),
-    group: input.group,
-    deletedAt: null,
-    assetId: input.assetId,
-  };
-  purchases.push(purchase);
-  return purchase;
+export async function createPurchase(input: PurchaseInput): Promise<Purchase> {
+  const row = await prisma.purchase.create({ data: { ...input } });
+  return toPurchase(row);
 }
 
-export function updatePurchase(id: string, input: PurchaseInput): Purchase | undefined {
-  const purchase = getPurchase(id);
-  if (!purchase) return undefined;
-  purchase.item = input.item;
-  purchase.vendor = input.vendor;
-  purchase.quantity = input.quantity;
-  purchase.totalCostCents = input.totalCostCents;
-  purchase.purchasedAt = input.purchasedAt;
-  purchase.notes = input.notes;
-  purchase.group = input.group;
-  purchase.assetId = input.assetId;
-  return purchase;
+export async function updatePurchase(id: string, input: PurchaseInput): Promise<Purchase | undefined> {
+  const existing = await prisma.purchase.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return undefined;
+  const row = await prisma.purchase.update({ where: { id }, data: { ...input } });
+  return toPurchase(row);
 }
 
 /** Soft delete — hides the purchase from normal views but keeps it around so it can be restored from Trash. */
-export function deletePurchase(id: string): void {
-  const purchase = getPurchase(id);
-  if (purchase) purchase.deletedAt = new Date().toISOString();
+export async function deletePurchase(id: string): Promise<void> {
+  await prisma.purchase.updateMany({ where: { id }, data: { deletedAt: new Date() } });
 }
 
-export function restorePurchase(id: string): void {
-  const purchase = getPurchase(id);
-  if (purchase) purchase.deletedAt = null;
+export async function restorePurchase(id: string): Promise<void> {
+  await prisma.purchase.updateMany({ where: { id }, data: { deletedAt: null } });
 }
 
 /** Actually removes the purchase — only reachable from the Trash page's "Delete forever". */
-export function permanentlyDeletePurchase(id: string): void {
-  const index = purchases.findIndex((p) => p.id === id);
-  if (index !== -1) purchases.splice(index, 1);
+export async function permanentlyDeletePurchase(id: string): Promise<void> {
+  await prisma.purchase.deleteMany({ where: { id } });
 }
 
-export function listDeletedPurchases(): Purchase[] {
-  purgeExpiredTrash();
-  return purchases
-    .filter((p) => p.deletedAt)
-    .sort((a, b) => ((a.deletedAt ?? "") < (b.deletedAt ?? "") ? 1 : -1));
+export async function listDeletedPurchases(): Promise<Purchase[]> {
+  await purgeExpiredTrash();
+  const rows = await prisma.purchase.findMany({
+    where: { deletedAt: { not: null } },
+    orderBy: { deletedAt: "desc" },
+  });
+  return rows.map(toPurchase);
 }
 
-export function purchasesSummary() {
-  const active = purchases.filter((p) => !p.deletedAt);
-  const totalCents = active.reduce((sum, p) => sum + p.totalCostCents, 0);
-  return { totalCents, count: active.length };
+export async function purchasesSummary() {
+  const result = await prisma.purchase.aggregate({
+    where: { deletedAt: null },
+    _sum: { totalCostCents: true },
+    _count: true,
+  });
+  return { totalCents: result._sum.totalCostCents ?? 0, count: result._count };
 }
 
-export function listPurchaseGroups(): string[] {
-  return [...purchaseGroups].sort((a, b) => a.localeCompare(b));
+export async function listPurchaseGroups(): Promise<string[]> {
+  const rows = await prisma.purchaseGroup.findMany();
+  return rows.map((g) => g.name).sort((a, b) => a.localeCompare(b));
 }
 
 /** Returns false (and adds nothing) if the name is blank or already exists, case-insensitively. */
-export function createPurchaseGroup(name: string): boolean {
+export async function createPurchaseGroup(name: string): Promise<boolean> {
   const trimmed = name.trim();
   if (!trimmed) return false;
-  const alreadyExists = purchaseGroups.some((g) => g.toLowerCase() === trimmed.toLowerCase());
-  if (alreadyExists) return false;
-  purchaseGroups.push(trimmed);
+  const existing = await prisma.purchaseGroup.findFirst({
+    where: { name: { equals: trimmed, mode: "insensitive" } },
+  });
+  if (existing) return false;
+  await prisma.purchaseGroup.create({ data: { name: trimmed } });
   return true;
 }
 
-export function searchPurchases({ query, group }: { query?: string; group?: string }): Purchase[] {
-  const normalizedQuery = query?.trim().toLowerCase();
-  return purchases
-    .filter((purchase) => {
-      if (purchase.deletedAt) return false;
-      if (group && purchase.group !== group) return false;
-      if (!normalizedQuery) return true;
-      const haystack = [purchase.item, purchase.vendor ?? "", purchase.notes ?? "", purchase.group ?? ""]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(normalizedQuery);
-    })
-    .sort((a, b) => (a.purchasedAt < b.purchasedAt ? 1 : -1));
+export async function searchPurchases({
+  query,
+  group,
+}: {
+  query?: string;
+  group?: string;
+}): Promise<Purchase[]> {
+  const trimmed = query?.trim();
+  const where: Prisma.PurchaseWhereInput = { deletedAt: null };
+  if (group) where.group = group;
+
+  if (trimmed) {
+    const like = { contains: trimmed, mode: "insensitive" } as const;
+    where.OR = [{ item: like }, { vendor: like }, { notes: like }, { group: like }];
+  }
+
+  const rows = await prisma.purchase.findMany({ where, orderBy: { purchasedAt: "desc" } });
+  return rows.map(toPurchase);
 }

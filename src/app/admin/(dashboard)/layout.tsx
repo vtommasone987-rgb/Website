@@ -8,7 +8,10 @@ import { AdminNav } from "./AdminNav";
 async function currentDisplayName(subject: string | null): Promise<string | null> {
   if (subject === "admin") return "Admin";
   const employeeId = employeeIdFromSubject(subject);
-  return employeeId ? (getEmployee(employeeId)?.name ?? "Employee") : null;
+  if (!employeeId) return null;
+  // Falls back to a generic label if the employee was deleted while their
+  // session was still valid — see the stateless-session note in lib/session.ts.
+  return (await getEmployee(employeeId))?.name ?? "Employee";
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {

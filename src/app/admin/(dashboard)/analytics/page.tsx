@@ -13,8 +13,8 @@ export default async function AnalyticsPage() {
     );
   }
 
-  const summary = salesSummary();
-  const sales = listSales();
+  const summary = await salesSummary();
+  const sales = await listSales();
   const maxSale = Math.max(1, ...sales.map((s) => s.salePriceCents));
 
   return (

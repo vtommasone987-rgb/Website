@@ -25,13 +25,13 @@ export default async function TicketDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const ticket = getTicket(id);
+  const ticket = await getTicket(id);
   if (!ticket) notFound();
 
-  const linkedAssets = getTicketAssets(id);
+  const linkedAssets = await getTicketAssets(id);
   const linkedIds = new Set(ticket.assetIds);
-  const availableToAdd = listAssets().filter((a) => !linkedIds.has(a.id));
-  const assignees = listAssignees();
+  const availableToAdd = (await listAssets()).filter((a) => !linkedIds.has(a.id));
+  const assignees = await listAssignees();
 
   return (
     <div className="flex flex-col gap-8">

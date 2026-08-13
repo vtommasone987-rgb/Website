@@ -25,13 +25,13 @@ export default async function CustomOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = getCustomOrder(id);
+  const order = await getCustomOrder(id);
   if (!order) notFound();
 
-  const linkedAssets = getCustomOrderAssets(id);
+  const linkedAssets = await getCustomOrderAssets(id);
   const linkedIds = new Set(order.assetIds);
-  const availableToAdd = listAssets().filter((a) => !linkedIds.has(a.id));
-  const assignees = listAssignees();
+  const availableToAdd = (await listAssets()).filter((a) => !linkedIds.has(a.id));
+  const assignees = await listAssignees();
 
   return (
     <div className="flex flex-col gap-8">

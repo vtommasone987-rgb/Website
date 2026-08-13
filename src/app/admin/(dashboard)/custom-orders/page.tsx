@@ -12,9 +12,9 @@ const CATEGORY_LABELS: Record<CustomOrderCategory, string> = {
   other: "Other",
 };
 
-export default function CustomOrdersPage() {
-  const orders = listCustomOrders();
-  const assignees = listAssignees();
+export default async function CustomOrdersPage() {
+  const orders = await listCustomOrders();
+  const assignees = await listAssignees();
   const openCount = orders.filter((o) => !o.completed).length;
 
   return (

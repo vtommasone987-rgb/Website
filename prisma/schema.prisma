@@ -1,0 +1,175 @@
+// Postgres schema backing the OPTS app. Mirrors the shapes in src/lib/types.ts —
+// src/lib/store.ts maps between these rows and those types so pages and actions
+// keep working against the same TypeScript shapes they always have.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Connection URLs live in prisma.config.ts (Prisma 7 reads them from there).
+datasource db {
+  provider = "postgresql"
+}
+
+model Asset {
+  id String @id @default(uuid())
+
+  /// Short sequential reference (101, 102, ...). Auto-assigned, never reused —
+  /// the sequence is started at 101 by the seed script.
+  assetNumber Int    @unique @default(autoincrement())
+  name        String
+  model       String
+
+  serialNumber String
+  priceCents   Int
+  /// "available" | "sold" — constrained by AssetStatus in src/lib/types.ts.
+  status       String @default("available")
+  description  String
+
+  createdAt DateTime @default(now())
+  /// Freeform organizing label, e.g. "Reserved: Jane Doe". Null means ungrouped.
+  group     String?
+  /// Where the physical item is, e.g. "Warehouse A, Shelf 3".
+  location  String?
+  /// Soft-delete marker — set instead of deleting so Trash can restore it.
+  deletedAt DateTime?
+  /// Employee handling this asset.
+  assignedTo String?
+
+  parts          Part[]
+  storageDevices StorageDevice[]
+  images         AssetImage[]
+  sales          Sale[]
+  purchases      Purchase[]
+  tickets        Ticket[]        @relation("TicketAssets")
+  customOrders   CustomOrder[]   @relation("CustomOrderAssets")
+
+  @@index([deletedAt])
+}
+
+model Part {
+  id           String @id @default(uuid())
+  name         String
+  serialNumber String
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+}
+
+model StorageDevice {
+  id String @id @default(uuid())
+
+  /// "hdd" | "sata-ssd" | "nvme-ssd" | "emmc" | "other" — see StorageType.
+  type         String
+  capacityGb   Int
+  serialNumber String
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+}
+
+model AssetImage {
+  id  String @id @default(uuid())
+  url String
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+}
+
+model Sale {
+  id String @id @default(uuid())
+
+  /// Denormalized on purpose — the sale record should survive the asset being
+  /// permanently deleted, so analytics history doesn't develop holes.
+  assetName      String
+  salePriceCents Int
+  soldAt         DateTime @default(now())
+
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+}
+
+model Ticket {
+  id    String @id @default(uuid())
+  name  String
+  email String
+
+  /// "warranty" | "repair" | "feedback" | "other" — see TicketCategory.
+  category    String
+  description String
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  assignedTo  String?
+
+  assets Asset[] @relation("TicketAssets")
+}
+
+model CustomOrder {
+  id    String @id @default(uuid())
+  name  String
+  email String
+
+  /// "pc-build" | "laptop" | "tablet" | "other" — see CustomOrderCategory.
+  category   String
+  model      String?
+  quantity   Int      @default(1)
+  details    String
+  budget     String?
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  assignedTo String?
+
+  assets Asset[] @relation("CustomOrderAssets")
+}
+
+model Purchase {
+  id             String @id @default(uuid())
+  item           String
+  vendor         String?
+  quantity       Int      @default(1)
+  totalCostCents Int
+
+  /// Calendar date as "YYYY-MM-DD", deliberately NOT a DateTime. A bare date has
+  /// no time-of-day, so storing it as a timestamp reintroduces the off-by-one-day
+  /// bug that formatDateOnly() in src/lib/format.ts exists to avoid.
+  purchasedAt String
+
+  notes     String?
+  createdAt DateTime  @default(now())
+  group     String?
+  deletedAt DateTime?
+
+  /// At most one related inventory asset (not the multi-asset pattern Tickets
+  /// and Custom Orders use).
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([deletedAt])
+}
+
+model Employee {
+  id           String   @id @default(uuid())
+  name         String
+  username     String   @unique
+  passwordHash String
+  passwordSalt String
+  createdAt    DateTime @default(now())
+}
+
+/// Asset organizing labels. Its own table so a group can exist before anything
+/// is filed under it.
+model AssetGroup {
+  name String @id
+}
+
+/// Purchase categories — a separate list from AssetGroup (different domain:
+/// "Tools"/"IT Supplies" vs. "Reserved: Jane Doe").
+model PurchaseGroup {
+  name String @id
+}

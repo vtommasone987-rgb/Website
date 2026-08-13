@@ -22,7 +22,7 @@ export async function loginAction(formData: FormData) {
     redirect(`/admin/login?error=rate-limited&from=${encodeURIComponent(safeFrom)}`);
   }
 
-  const result = authenticate(username, password);
+  const result = await authenticate(username, password);
   if (!result.ok) {
     redirect(`/admin/login?error=1&from=${encodeURIComponent(safeFrom)}`);
   }

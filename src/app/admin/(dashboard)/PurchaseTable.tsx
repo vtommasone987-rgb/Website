@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { Purchase } from "@/lib/types";
 import { formatDateOnly, formatPrice } from "@/lib/format";
 import { deletePurchaseAction } from "@/app/admin/actions";
-import { getAsset } from "@/lib/store";
+import { getAssetNumbers } from "@/lib/store";
 
-export function PurchaseTable({
+export async function PurchaseTable({
   purchases,
   showGroupColumn = false,
 }: {
@@ -14,6 +14,11 @@ export function PurchaseTable({
   if (purchases.length === 0) {
     return <p className="px-1 text-sm text-slate-500">No purchases here.</p>;
   }
+
+  // Resolved in one query up front rather than per row.
+  const assetNumbers = await getAssetNumbers(
+    purchases.map((p) => p.assetId).filter((id): id is string => Boolean(id)),
+  );
 
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900">
@@ -33,14 +38,14 @@ export function PurchaseTable({
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
           {purchases.map((purchase) => {
-            const linkedAsset = purchase.assetId ? getAsset(purchase.assetId) : undefined;
+            const assetNumber = purchase.assetId ? assetNumbers.get(purchase.assetId) : undefined;
             return (
               <tr key={purchase.id}>
                 <td className="whitespace-nowrap px-4 py-2 text-slate-500">{formatDateOnly(purchase.purchasedAt)}</td>
                 <td className="whitespace-nowrap px-4 py-2 text-slate-500">
-                  {linkedAsset ? (
-                    <Link href={`/admin/assets/${linkedAsset.id}`} className="underline">
-                      #{linkedAsset.assetNumber}
+                  {assetNumber !== undefined && purchase.assetId ? (
+                    <Link href={`/admin/assets/${purchase.assetId}`} className="underline">
+                      #{assetNumber}
                     </Link>
                   ) : (
                     "—"

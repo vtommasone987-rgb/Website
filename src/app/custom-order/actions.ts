@@ -24,12 +24,12 @@ function quantityFromFormData(formData: FormData): number {
 export async function createCustomOrderAction(formData: FormData) {
   // Honeypot — see the matching hidden field in page.tsx for why.
   if (String(formData.get("company") ?? "").trim()) {
-    redirect("/custom-order?submitted=1");
+    redirect("/?submitted=1#custom-build");
   }
 
   const ip = await getClientIp();
   if (isRateLimited(`custom-order:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS)) {
-    redirect("/custom-order?error=rate-limited");
+    redirect("/?error=rate-limited#custom-build");
   }
 
   const name = String(formData.get("name") ?? "").trim();
@@ -50,5 +50,5 @@ export async function createCustomOrderAction(formData: FormData) {
     });
   }
 
-  redirect("/custom-order?submitted=1");
+  redirect("/?submitted=1#custom-build");
 }

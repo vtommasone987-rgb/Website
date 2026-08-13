@@ -10,7 +10,7 @@ export default async function EditPurchasePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const purchase = getPurchase(id);
+  const purchase = await getPurchase(id);
   if (!purchase) notFound();
 
   if (purchase.deletedAt) {
@@ -28,6 +28,8 @@ export default async function EditPurchasePage({
     );
   }
 
+  const [existingGroups, assets] = await Promise.all([listPurchaseGroups(), listAssets()]);
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -43,8 +45,8 @@ export default async function EditPurchasePage({
         action={updatePurchaseAction.bind(null, purchase.id)}
         purchase={purchase}
         submitLabel="Save changes"
-        existingGroups={listPurchaseGroups()}
-        assets={listAssets()}
+        existingGroups={existingGroups}
+        assets={assets}
       />
     </div>
   );

@@ -14,7 +14,7 @@ export default async function EditEmployeePage({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
-  const employee = getEmployee(id);
+  const employee = await getEmployee(id);
   if (!employee) notFound();
   const isOwner = isAdminSubject(await getCurrentSubject());
 

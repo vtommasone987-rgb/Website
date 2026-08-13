@@ -1,8 +1,21 @@
 @import "tailwindcss";
 
+/*
+ * Two-layer surface system: the page sits on a slightly tinted base, and every
+ * card/panel sits on a lighter "surface" above it. That difference is what makes
+ * boxes read as raised without needing heavy borders. Everything is in the slate
+ * family so the neutral grays, the dark feature band, and the accents all share
+ * the same temperature instead of mixing warm/cool grays.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f8fb;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-border: #dfe5ee;
+  /* Bright hairline along the top edge — the "bevel". */
+  --surface-bevel: rgb(255 255 255 / 1);
+  --surface-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 6px 16px -6px rgb(15 23 42 / 0.1);
+  --field-shadow: inset 0 1px 2px 0 rgb(15 23 42 / 0.07);
 }
 
 @theme inline {
@@ -14,13 +27,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #080c14;
+    --foreground: #e2e8f0;
+    --surface: #121a28;
+    --surface-border: #222e42;
+    --surface-bevel: rgb(255 255 255 / 0.07);
+    --surface-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 6px 16px -6px rgb(0 0 0 / 0.6);
+    --field-shadow: inset 0 1px 2px 0 rgb(0 0 0 / 0.35);
   }
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 body {
@@ -29,6 +43,30 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+ * A raised panel: hairline border, bright inner highlight along the top edge,
+ * and a soft drop shadow beneath. Use this for every card/box so they all catch
+ * light the same way.
+ */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: inset 0 1px 0 0 var(--surface-bevel), var(--surface-shadow);
+}
+
+/* The inverse — form fields read as recessed wells rather than raised panels. */
+.field {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--field-shadow);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--color-indigo-500);
+  box-shadow: var(--field-shadow), 0 0 0 3px rgb(99 102 241 / 0.25);
+}
+
 ::selection {
-  background: color-mix(in srgb, var(--color-indigo-600) 30%, transparent);
+  background: color-mix(in srgb, var(--color-indigo-600) 25%, transparent);
 }

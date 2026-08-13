@@ -10,8 +10,8 @@ export default async function PurchasesPage({
   searchParams: Promise<{ q?: string; group?: string }>;
 }) {
   const { q, group } = await searchParams;
-  const groups = listPurchaseGroups();
-  const summary = purchasesSummary();
+  const groups = await listPurchaseGroups();
+  const summary = await purchasesSummary();
   const isFiltering = Boolean(q?.trim()) || Boolean(group);
 
   return (
@@ -105,8 +105,8 @@ export default async function PurchasesPage({
   );
 }
 
-function FilteredResults({ query, group }: { query?: string; group?: string }) {
-  const results = searchPurchases({ query, group });
+async function FilteredResults({ query, group }: { query?: string; group?: string }) {
+  const results = await searchPurchases({ query, group });
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-slate-500">
@@ -117,8 +117,8 @@ function FilteredResults({ query, group }: { query?: string; group?: string }) {
   );
 }
 
-function GroupedPurchases({ groups }: { groups: string[] }) {
-  const all = listPurchases();
+async function GroupedPurchases({ groups }: { groups: string[] }) {
+  const all = await listPurchases();
 
   // No groups in use yet — just show one flat table rather than a redundant "Ungrouped" heading.
   if (groups.length === 0) {

@@ -9,7 +9,7 @@ export default async function AdminPage({
   searchParams: Promise<{ q?: string; group?: string }>;
 }) {
   const { q, group } = await searchParams;
-  const groups = listGroups();
+  const groups = await listGroups();
   const isFiltering = Boolean(q?.trim()) || Boolean(group);
 
   return (
@@ -96,8 +96,8 @@ export default async function AdminPage({
   );
 }
 
-function FilteredResults({ query, group }: { query?: string; group?: string }) {
-  const results = searchAssets({ query, group });
+async function FilteredResults({ query, group }: { query?: string; group?: string }) {
+  const results = await searchAssets({ query, group });
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-slate-500">
@@ -108,8 +108,8 @@ function FilteredResults({ query, group }: { query?: string; group?: string }) {
   );
 }
 
-function GroupedInventory({ groups }: { groups: string[] }) {
-  const all = listAssets();
+async function GroupedInventory({ groups }: { groups: string[] }) {
+  const all = await listAssets();
 
   // No groups in use yet — just show one flat table rather than a redundant "Ungrouped" heading.
   if (groups.length === 0) {

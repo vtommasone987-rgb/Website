@@ -139,7 +139,7 @@ async function savePhotos(formData: FormData): Promise<string[]> {
 export async function createAssetAction(formData: FormData) {
   await assertAdmin();
   const imageUrls = await savePhotos(formData);
-  createAsset({
+  await createAsset({
     name: String(formData.get("name") ?? ""),
     model: String(formData.get("model") ?? ""),
     serialNumber: String(formData.get("serialNumber") ?? ""),
@@ -160,7 +160,7 @@ export async function createAssetAction(formData: FormData) {
 export async function updateAssetAction(id: string, formData: FormData) {
   await assertAdmin();
   const imageUrls = await savePhotos(formData);
-  updateAsset(id, {
+  await updateAsset(id, {
     name: String(formData.get("name") ?? ""),
     model: String(formData.get("model") ?? ""),
     serialNumber: String(formData.get("serialNumber") ?? ""),
@@ -182,7 +182,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
 
 export async function deleteAssetAction(id: string) {
   await assertAdmin();
-  deleteAsset(id);
+  await deleteAsset(id);
   revalidatePath("/admin");
   revalidatePath("/shop");
   redirect("/admin");
@@ -190,7 +190,7 @@ export async function deleteAssetAction(id: string) {
 
 export async function restoreAssetAction(id: string) {
   await assertAdmin();
-  restoreAsset(id);
+  await restoreAsset(id);
   revalidatePath("/admin");
   revalidatePath("/admin/trash");
   revalidatePath("/shop");
@@ -199,14 +199,14 @@ export async function restoreAssetAction(id: string) {
 
 export async function permanentlyDeleteAssetAction(id: string) {
   await assertAdmin();
-  permanentlyDeleteAsset(id);
+  await permanentlyDeleteAsset(id);
   revalidatePath("/admin/trash");
   redirect("/admin/trash");
 }
 
 export async function createGroupAction(formData: FormData) {
   await assertAdmin();
-  createGroup(String(formData.get("name") ?? ""));
+  await createGroup(String(formData.get("name") ?? ""));
   // "layout" revalidates every page under /admin (including assets/new and
   // assets/[id], which render the group dropdown) — those routes don't take
   // an id, so a single literal revalidatePath("/admin") wouldn't reach them.
@@ -219,13 +219,13 @@ export async function createGroupAction(formData: FormData) {
 // they just update state and revalidate so the list re-renders in place.
 export async function setTicketStatusAction(ticketId: string, completed: boolean) {
   await assertAdmin();
-  setTicketCompleted(ticketId, completed);
+  await setTicketCompleted(ticketId, completed);
   revalidatePath("/admin/tickets");
 }
 
 export async function setCustomOrderStatusAction(orderId: string, completed: boolean) {
   await assertAdmin();
-  setCustomOrderCompleted(orderId, completed);
+  await setCustomOrderCompleted(orderId, completed);
   revalidatePath("/admin/custom-orders");
   revalidatePath(`/admin/custom-orders/${orderId}`);
 }
@@ -237,7 +237,7 @@ export async function setCustomOrderStatusAction(orderId: string, completed: boo
 // doesn't need client JS to auto-submit).
 export async function setTicketAssigneeAction(ticketId: string, formData: FormData) {
   await assertAdmin();
-  setTicketAssignee(ticketId, optionalString(formData, "assignedTo"));
+  await setTicketAssignee(ticketId, optionalString(formData, "assignedTo"));
   revalidatePath("/admin/tickets");
 }
 
@@ -245,7 +245,7 @@ export async function attachAssetToTicketAction(ticketId: string, formData: Form
   await assertAdmin();
   const assetId = String(formData.get("assetId") ?? "");
   if (assetId) {
-    addAssetToTicket(ticketId, assetId);
+    await addAssetToTicket(ticketId, assetId);
   }
   revalidatePath(`/admin/tickets/${ticketId}`);
   revalidatePath("/admin/tickets");
@@ -253,14 +253,14 @@ export async function attachAssetToTicketAction(ticketId: string, formData: Form
 
 export async function removeAssetFromTicketAction(ticketId: string, assetId: string) {
   await assertAdmin();
-  removeAssetFromTicket(ticketId, assetId);
+  await removeAssetFromTicket(ticketId, assetId);
   revalidatePath(`/admin/tickets/${ticketId}`);
   revalidatePath("/admin/tickets");
 }
 
 export async function setCustomOrderAssigneeAction(orderId: string, formData: FormData) {
   await assertAdmin();
-  setCustomOrderAssignee(orderId, optionalString(formData, "assignedTo"));
+  await setCustomOrderAssignee(orderId, optionalString(formData, "assignedTo"));
   revalidatePath("/admin/custom-orders");
   revalidatePath(`/admin/custom-orders/${orderId}`);
 }
@@ -269,7 +269,7 @@ export async function attachAssetToOrderAction(orderId: string, formData: FormDa
   await assertAdmin();
   const assetId = String(formData.get("assetId") ?? "");
   if (assetId) {
-    addAssetToCustomOrder(orderId, assetId);
+    await addAssetToCustomOrder(orderId, assetId);
   }
   revalidatePath(`/admin/custom-orders/${orderId}`);
   revalidatePath("/admin/custom-orders");
@@ -277,7 +277,7 @@ export async function attachAssetToOrderAction(orderId: string, formData: FormDa
 
 export async function removeAssetFromOrderAction(orderId: string, assetId: string) {
   await assertAdmin();
-  removeAssetFromCustomOrder(orderId, assetId);
+  await removeAssetFromCustomOrder(orderId, assetId);
   revalidatePath(`/admin/custom-orders/${orderId}`);
   revalidatePath("/admin/custom-orders");
 }
@@ -285,7 +285,7 @@ export async function removeAssetFromOrderAction(orderId: string, assetId: strin
 export async function markSoldAction(id: string, formData: FormData) {
   await assertAdmin();
   const salePriceCents = centsFromDollarsInput(formData.get("salePrice"));
-  markSold(id, salePriceCents);
+  await markSold(id, salePriceCents);
   revalidatePath("/admin");
   revalidatePath("/shop");
   revalidatePath("/admin/analytics");
@@ -294,7 +294,7 @@ export async function markSoldAction(id: string, formData: FormData) {
 
 export async function createPurchaseAction(formData: FormData) {
   await assertAdmin();
-  createPurchase({
+  await createPurchase({
     item: String(formData.get("item") ?? ""),
     vendor: optionalString(formData, "vendor"),
     quantity: positiveIntFromFormData(formData, "quantity"),
@@ -310,7 +310,7 @@ export async function createPurchaseAction(formData: FormData) {
 
 export async function updatePurchaseAction(id: string, formData: FormData) {
   await assertAdmin();
-  updatePurchase(id, {
+  await updatePurchase(id, {
     item: String(formData.get("item") ?? ""),
     vendor: optionalString(formData, "vendor"),
     quantity: positiveIntFromFormData(formData, "quantity"),
@@ -327,14 +327,14 @@ export async function updatePurchaseAction(id: string, formData: FormData) {
 
 export async function deletePurchaseAction(id: string) {
   await assertAdmin();
-  deletePurchase(id);
+  await deletePurchase(id);
   revalidatePath("/admin/purchases");
   redirect("/admin/purchases");
 }
 
 export async function restorePurchaseAction(id: string) {
   await assertAdmin();
-  restorePurchase(id);
+  await restorePurchase(id);
   revalidatePath("/admin/purchases");
   revalidatePath("/admin/trash");
   redirect("/admin/trash");
@@ -342,14 +342,14 @@ export async function restorePurchaseAction(id: string) {
 
 export async function permanentlyDeletePurchaseAction(id: string) {
   await assertAdmin();
-  permanentlyDeletePurchase(id);
+  await permanentlyDeletePurchase(id);
   revalidatePath("/admin/trash");
   redirect("/admin/trash");
 }
 
 export async function createPurchaseGroupAction(formData: FormData) {
   await assertAdmin();
-  createPurchaseGroup(String(formData.get("name") ?? ""));
+  await createPurchaseGroup(String(formData.get("name") ?? ""));
   // "layout" so /admin/purchases/new and /admin/purchases/[id] (which render
   // the group dropdown) also pick up the new group immediately.
   revalidatePath("/admin", "layout");
@@ -358,7 +358,7 @@ export async function createPurchaseGroupAction(formData: FormData) {
 
 export async function createEmployeeAction(formData: FormData) {
   await assertAdmin();
-  const result = createEmployee({
+  const result = await createEmployee({
     name: String(formData.get("name") ?? ""),
     username: String(formData.get("username") ?? ""),
     password: String(formData.get("password") ?? ""),
@@ -375,7 +375,7 @@ export async function createEmployeeAction(formData: FormData) {
 export async function updateEmployeeAction(id: string, formData: FormData) {
   await assertAdmin();
   const password = String(formData.get("password") ?? "");
-  const result = updateEmployee(id, {
+  const result = await updateEmployee(id, {
     name: String(formData.get("name") ?? ""),
     username: String(formData.get("username") ?? ""),
     password: password.trim() ? password : undefined,
@@ -390,7 +390,7 @@ export async function updateEmployeeAction(id: string, formData: FormData) {
 
 export async function deleteEmployeeAction(id: string) {
   await assertOwner();
-  deleteEmployee(id);
+  await deleteEmployee(id);
   revalidatePath("/admin/employees");
   revalidatePath("/admin", "layout");
   redirect("/admin/employees");

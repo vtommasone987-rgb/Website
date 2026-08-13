@@ -89,7 +89,7 @@ function timingSafeEqualString(input: string, expected: string): boolean {
 export type AuthResult = { ok: true; subject: string; displayName: string } | { ok: false };
 
 /** Checks the shared admin login (.env.local) first, then the employee directory. */
-export function authenticate(username: string, password: string): AuthResult {
+export async function authenticate(username: string, password: string): Promise<AuthResult> {
   const expectedUsername = process.env.ADMIN_USERNAME;
   const expectedPassword = process.env.ADMIN_PASSWORD;
   if (expectedUsername && expectedPassword) {
@@ -102,7 +102,7 @@ export function authenticate(username: string, password: string): AuthResult {
     }
   }
 
-  const employee = findEmployeeByUsername(username);
+  const employee = await findEmployeeByUsername(username);
   if (employee && verifyPassword(password, employee.passwordHash, employee.passwordSalt)) {
     return { ok: true, subject: `${EMPLOYEE_SUBJECT_PREFIX}${employee.id}`, displayName: employee.name };
   }

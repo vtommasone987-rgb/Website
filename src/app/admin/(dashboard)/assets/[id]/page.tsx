@@ -10,7 +10,7 @@ export default async function EditAssetPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const asset = getAsset(id);
+  const asset = await getAsset(id);
   if (!asset) notFound();
 
   if (asset.deletedAt) {
@@ -27,6 +27,12 @@ export default async function EditAssetPage({
       </div>
     );
   }
+
+  const [existingGroups, existingLocations, existingAssignees] = await Promise.all([
+    listGroups(),
+    listLocations(),
+    listAssignees(),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -45,9 +51,9 @@ export default async function EditAssetPage({
         action={updateAssetAction.bind(null, asset.id)}
         asset={asset}
         submitLabel="Save changes"
-        existingGroups={listGroups()}
-        existingLocations={listLocations()}
-        existingAssignees={listAssignees()}
+        existingGroups={existingGroups}
+        existingLocations={existingLocations}
+        existingAssignees={existingAssignees}
       />
 
       {asset.status === "available" ? (

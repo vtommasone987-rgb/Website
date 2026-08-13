@@ -12,9 +12,9 @@ const CATEGORY_LABELS: Record<TicketCategory, string> = {
   other: "Other",
 };
 
-export default function TicketsPage() {
-  const tickets = listTickets();
-  const assignees = listAssignees();
+export default async function TicketsPage() {
+  const tickets = await listTickets();
+  const assignees = await listAssignees();
   const openCount = tickets.filter((t) => !t.completed).length;
 
   return (

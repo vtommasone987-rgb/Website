@@ -7,9 +7,9 @@ import {
   restorePurchaseAction,
 } from "@/app/admin/actions";
 
-export default function TrashPage() {
-  const deletedAssets = listDeletedAssets();
-  const deletedPurchases = listDeletedPurchases();
+export default async function TrashPage() {
+  const deletedAssets = await listDeletedAssets();
+  const deletedPurchases = await listDeletedPurchases();
 
   return (
     <div className="flex flex-col gap-8">

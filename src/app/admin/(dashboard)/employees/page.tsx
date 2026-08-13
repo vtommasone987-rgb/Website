@@ -11,7 +11,7 @@ export default async function EmployeesPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const employees = listEmployees();
+  const employees = await listEmployees();
   const isOwner = isAdminSubject(await getCurrentSubject());
 
   return (

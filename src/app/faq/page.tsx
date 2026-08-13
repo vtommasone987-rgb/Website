@@ -21,8 +21,8 @@ export default function FaqPage() {
   return (
     <div className="flex flex-col gap-8 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Frequently asked questions</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-3xl font-semibold tracking-tight">Frequently asked questions</h1>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">
           Don&apos;t see your question here?{" "}
           <a href="/contact" className="font-medium text-indigo-600 underline underline-offset-2 dark:text-indigo-400">
             Contact us
@@ -35,20 +35,20 @@ export default function FaqPage() {
         {faqs.map((faq) => (
           <div
             key={faq.q}
-            className="rounded-xl border border-zinc-200 p-5 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
+            className="surface rounded-xl p-5 transition-colors hover:border-slate-400 dark:hover:border-slate-600"
           >
             <h2 className="flex items-start gap-2 font-semibold">
               <span className="text-indigo-500 dark:text-indigo-400">Q.</span>
               {faq.q}
             </h2>
-            <p className="mt-2 pl-5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{faq.a}</p>
+            <p className="mt-2 pl-5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{faq.a}</p>
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-slate-400">
         These are placeholder questions and answers — edit them in{" "}
-        <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-900">src/app/faq/page.tsx</code>.
+        <code className="rounded bg-slate-200/60 px-1 py-0.5 dark:bg-slate-800">src/app/faq/page.tsx</code>.
       </p>
     </div>
   );
