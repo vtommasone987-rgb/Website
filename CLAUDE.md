@@ -23,6 +23,13 @@ Two commands, in two terminals:
 
 Other database commands: `npm run db:migrate` (apply schema changes), `npm run db:seed` (reset to demo data), `npm run db:studio` (browse tables in a GUI).
 
+**If every page suddenly 500s with `P1017` / "Server has closed the connection":** the local database server has wedged — it keeps its ports open but resets every connection, so this looks like an app bug when it isn't. Confirm by connecting outside the app; if that also fails, restart it:
+```
+npx prisma dev stop opts
+npx prisma dev -d -n opts
+```
+Data survives the restart. Check the printed URL still matches `DATABASE_URL` in `.env` — the port can change.
+
 ## Status
 Working prototype backed by **Postgres via Prisma** (`prisma/schema.prisma` → `src/lib/store.ts`):
 - `/` — landing page (hero + recently-listed preview)
