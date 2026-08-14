@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { listAvailableAssets } from "@/lib/store";
 import { formatPrice } from "@/lib/format";
+import { AssetThumbnail } from "@/app/AssetThumbnail";
 
 export default async function ShopPage() {
   const assets = await listAvailableAssets();
@@ -20,22 +20,17 @@ export default async function ShopPage() {
               href={`/shop/${asset.id}`}
               className="surface group flex flex-col overflow-hidden rounded-xl transition-colors hover:border-slate-400 dark:hover:border-slate-600"
             >
-              <div className="relative aspect-[4/3] bg-slate-100 dark:bg-slate-800">
-                {asset.images[0] && (
-                  <Image
-                    src={asset.images[0].url}
-                    alt={asset.name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-                )}
-              </div>
+              <AssetThumbnail
+                image={asset.images[0]}
+                alt={asset.name}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="aspect-[4/3]"
+              />
               <div className="flex flex-col gap-1 p-4">
                 <h2 className="font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                   {asset.name}
                 </h2>
-                <p className="text-sm text-slate-500">{asset.model}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{asset.model}</p>
                 <p className="mt-1 font-semibold">{formatPrice(asset.priceCents)}</p>
               </div>
             </Link>

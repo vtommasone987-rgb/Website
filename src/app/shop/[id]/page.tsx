@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getAsset } from "@/lib/store";
 import { formatPrice } from "@/lib/format";
+import { AssetThumbnail } from "@/app/AssetThumbnail";
 import type { StorageType } from "@/lib/types";
 
 const STORAGE_TYPE_LABELS: Record<StorageType, string> = {
@@ -24,11 +25,13 @@ export default async function ShopItemPage({
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
       <div className="flex flex-col gap-3">
-        <div className="surface relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
-          {asset.images[0] && (
-            <Image src={asset.images[0].url} alt={asset.name} fill sizes="50vw" className="object-cover" priority />
-          )}
-        </div>
+        <AssetThumbnail
+          image={asset.images[0]}
+          alt={asset.name}
+          sizes="50vw"
+          priority
+          className="surface aspect-[4/3] rounded-2xl"
+        />
         {asset.images.length > 1 && (
           <div className="grid grid-cols-4 gap-2">
             {asset.images.slice(1).map((img) => (

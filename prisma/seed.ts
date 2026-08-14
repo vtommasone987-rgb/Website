@@ -56,12 +56,6 @@ async function main() {
       storageDevices: {
         create: [{ type: "nvme-ssd", capacityGb: 512, serialNumber: "SSD-TP-9911" }],
       },
-      images: {
-        create: [
-          { url: "https://picsum.photos/seed/thinkpad-1/800/600" },
-          { url: "https://picsum.photos/seed/thinkpad-2/800/600" },
-        ],
-      },
     },
   });
 
@@ -85,13 +79,6 @@ async function main() {
           { name: "LP-E6NH battery #1", serialNumber: "BATT-6NH-001" },
           { name: "LP-E6NH battery #2", serialNumber: "BATT-6NH-002" },
           { name: "CFexpress card reader", serialNumber: "RDR-CFX-33" },
-        ],
-      },
-      images: {
-        create: [
-          { url: "https://picsum.photos/seed/canon-1/800/600" },
-          { url: "https://picsum.photos/seed/canon-2/800/600" },
-          { url: "https://picsum.photos/seed/canon-3/800/600" },
         ],
       },
     },
@@ -118,7 +105,6 @@ async function main() {
           { name: "Fast charger", serialNumber: "DCB107-X" },
         ],
       },
-      images: { create: [{ url: "https://picsum.photos/seed/dewalt-1/800/600" }] },
     },
   });
 
@@ -150,7 +136,6 @@ async function main() {
           { type: "hdd", capacityGb: 600, serialNumber: "SAS-R730-02" },
         ],
       },
-      images: { create: [{ url: "https://picsum.photos/seed/dell-server-1/800/600" }] },
     },
   });
 
@@ -169,7 +154,6 @@ async function main() {
       location: "Office, Storage Closet",
       assignedTo: null,
       parts: { create: [{ name: "Adjustable lumbar support", serialNumber: "PFSL-4402" }] },
-      images: { create: [{ url: "https://picsum.photos/seed/aeron-1/800/600" }] },
     },
   });
 
