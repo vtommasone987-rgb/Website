@@ -2,13 +2,21 @@ import type { NextConfig } from "next";
 import { SECURITY_HEADERS, allowedServerActionHosts } from "./src/lib/security";
 
 const nextConfig: NextConfig = {
+  /**
+   * Drop the `X-Powered-By: Next.js` header. Knowing the framework tells an
+   * attacker which CVE list to work through and which payloads to try first;
+   * there is no reason to volunteer it.
+   */
+  poweredByHeader: false,
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-      },
-    ],
+    /**
+     * No remote image hosts. Every image is either uploaded to our own storage
+     * or shipped in /public, so leaving a remote pattern configured would only
+     * mean the optimizer can be pointed at third-party URLs.
+     */
+    remotePatterns: [],
+    // The optimizer will not rasterize SVG; an SVG can carry script.
+    dangerouslyAllowSVG: false,
   },
   /**
    * The static half of the security headers (the Helmet equivalent) — declared

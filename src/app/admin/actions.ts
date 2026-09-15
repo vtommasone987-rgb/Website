@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { detectImageType, MAX_IMAGE_BYTES, MAX_IMAGES_PER_ASSET } from "@/lib/uploads";
 import {
   addAssetToCustomOrder,
   addAssetToTicket,
@@ -119,7 +120,10 @@ function storageDevicesFromFormData(formData: FormData) {
 // dev" storage decision from CLAUDE.md — swap this function for an upload to
 // Cloudflare R2/Vercel Blob later without touching any caller.
 async function savePhotos(formData: FormData): Promise<string[]> {
-  const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+  const files = formData
+    .getAll("photos")
+    .filter((f): f is File => f instanceof File && f.size > 0)
+    .slice(0, MAX_IMAGES_PER_ASSET);
   if (files.length === 0) return [];
 
   const uploadDir = path.join(process.cwd(), "public", "uploads");
@@ -127,9 +131,27 @@ async function savePhotos(formData: FormData): Promise<string[]> {
 
   const urls: string[] = [];
   for (const file of files) {
-    const extension = file.type.split("/")[1] ?? "jpg";
-    const filename = `${randomUUID()}.${extension}`;
+    if (file.size > MAX_IMAGE_BYTES) {
+      console.warn(`Upload rejected: ${file.size} bytes exceeds the ${MAX_IMAGE_BYTES} byte limit.`);
+      continue;
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    /**
+     * The extension comes from the file's own leading bytes, never from
+     * file.type or file.name. A browser can label anything "image/png", and the
+     * old code fed that straight into the stored filename — so a .html or
+     * .svg+xml file could end up written into /public/uploads and served back
+     * from this origin, where it would run as a page rather than render as a photo.
+     */
+    const extension = detectImageType(buffer);
+    if (!extension) {
+      console.warn("Upload rejected: file contents are not a JPEG, PNG, GIF, or WebP image.");
+      continue;
+    }
+
+    const filename = `${randomUUID()}.${extension}`;
     await writeFile(path.join(uploadDir, filename), buffer);
     urls.push(`/uploads/${filename}`);
   }
