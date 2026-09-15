@@ -5,38 +5,61 @@ import { createTicket } from "@/lib/store";
 import type { TicketCategory } from "@/lib/types";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import {
+  FIELD_LIMITS,
+  isValidEmail,
+  multiLine,
+  oneOf,
+  singleLine,
+  submittedTooFast,
+} from "@/lib/validate";
 
-const VALID_CATEGORIES: TicketCategory[] = ["warranty", "repair", "feedback", "other"];
+const VALID_CATEGORIES: readonly TicketCategory[] = ["warranty", "repair", "feedback", "other"];
 const SUBMIT_LIMIT = 5;
 const SUBMIT_WINDOW_MS = 10 * 60 * 1000;
-
-function categoryFromFormData(formData: FormData): TicketCategory {
-  const raw = String(formData.get("category") ?? "");
-  return (VALID_CATEGORIES as string[]).includes(raw) ? (raw as TicketCategory) : "other";
-}
 
 // Public — anyone can submit a ticket, no admin session needed. Contrast with
 // src/app/admin/actions.ts, which is admin-only and checks assertAdmin().
 export async function createTicketAction(formData: FormData) {
-  // Honeypot: a field real users never see or fill in (hidden via CSS on the
-  // form). If it's non-empty, a bot filled it — pretend success without
+  // Layer 1 — honeypot: a field real users never see or fill in (hidden via CSS
+  // on the form). If it's non-empty, a bot filled it — pretend success without
   // creating anything, so the bot has no signal that it was caught.
   if (String(formData.get("company") ?? "").trim()) {
     redirect("/contact?submitted=1");
   }
 
+  // Layer 2 — timing: same silent fake-success, for bots that know to skip
+  // hidden fields but still post faster than a person could type.
+  if (submittedTooFast(formData.get("started"))) {
+    redirect("/contact?submitted=1");
+  }
+
+  // Layer 3 — per-IP rate limit.
   const ip = await getClientIp();
   if (isRateLimited(`ticket:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS)) {
     redirect("/contact?error=rate-limited");
   }
 
-  const name = String(formData.get("name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
+  const name = singleLine(formData.get("name"), FIELD_LIMITS.name);
+  const email = singleLine(formData.get("email"), FIELD_LIMITS.email);
+  const description = multiLine(formData.get("description"), FIELD_LIMITS.freeText);
 
-  if (name && email && description) {
-    createTicket({ name, email, category: categoryFromFormData(formData), description });
+  // Invalid input now says so instead of silently discarding the submission and
+  // claiming success — but the message stays generic (see /contact's banner):
+  // which field failed and why is the submitter's business, not a probe's.
+  if (!name || !description || !isValidEmail(email)) {
+    redirect("/contact?error=invalid");
   }
+
+  // Must be awaited: redirect() throws to unwind the request, so a floating
+  // promise here would race the response and could lose the ticket entirely —
+  // and any database error would vanish instead of surfacing.
+  await createTicket({
+    name,
+    email,
+    category: oneOf(formData.get("category"), VALID_CATEGORIES, "other"),
+    description,
+  });
 
   redirect("/contact?submitted=1");
 }

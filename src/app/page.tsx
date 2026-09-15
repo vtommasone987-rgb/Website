@@ -348,6 +348,11 @@ export default async function Home({
             Too many submissions from this connection. Please wait a while and try again.
           </div>
         )}
+        {error === "invalid" && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            Something in that request didn&apos;t look right. Please check your details and try again.
+          </div>
+        )}
 
         <form action={createCustomOrderAction} className="surface flex flex-col gap-4 rounded-xl p-6">
           {/* Honeypot — hidden from real users via CSS; bots that fill in every
@@ -360,14 +365,17 @@ export default async function Home({
             aria-hidden="true"
             className="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0"
           />
+          {/* Submission timestamp, paired with the check in the action: a post that
+              arrives seconds after the page rendered is a bot, not a person typing. */}
+          <input type="hidden" name="started" value={String(Date.now())} />
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               Name
-              <input name="name" required className="field rounded-lg px-3 py-2.5 text-sm" />
+              <input name="name" required maxLength={100} className="field rounded-lg px-3 py-2.5 text-sm" />
             </label>
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               Email
-              <input type="email" name="email" required className="field rounded-lg px-3 py-2.5 text-sm" />
+              <input type="email" name="email" required maxLength={254} className="field rounded-lg px-3 py-2.5 text-sm" />
             </label>
           </div>
 
@@ -387,6 +395,7 @@ export default async function Home({
                 type="number"
                 name="quantity"
                 min={1}
+                max={10000}
                 step={1}
                 defaultValue={1}
                 required
@@ -400,6 +409,7 @@ export default async function Home({
               Specific model <span className="font-normal text-neutral-500">(optional)</span>
               <input
                 name="model"
+                maxLength={200}
                 placeholder="e.g. Dell Latitude 5440"
                 className="field rounded-lg px-3 py-2.5 text-sm"
               />
@@ -408,6 +418,7 @@ export default async function Home({
               Budget <span className="font-normal text-neutral-500">(optional)</span>
               <input
                 name="budget"
+                maxLength={100}
                 placeholder="e.g. $1,000–$1,500, or per unit"
                 className="field rounded-lg px-3 py-2.5 text-sm"
               />
@@ -418,6 +429,7 @@ export default async function Home({
             Tell us what you&apos;re looking for
             <textarea
               name="details"
+              maxLength={5000}
               required
               rows={4}
               placeholder="Use case, must-have specs, anything else that helps us scope it…"

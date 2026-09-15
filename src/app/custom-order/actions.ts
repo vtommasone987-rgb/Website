@@ -5,25 +5,29 @@ import { createCustomOrder } from "@/lib/store";
 import type { CustomOrderCategory } from "@/lib/types";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import {
+  boundedQuantity,
+  FIELD_LIMITS,
+  isValidEmail,
+  multiLine,
+  oneOf,
+  singleLine,
+  submittedTooFast,
+} from "@/lib/validate";
 
-const VALID_CATEGORIES: CustomOrderCategory[] = ["pc-build", "laptop", "tablet", "other"];
+const VALID_CATEGORIES: readonly CustomOrderCategory[] = ["pc-build", "laptop", "tablet", "other"];
 const SUBMIT_LIMIT = 5;
 const SUBMIT_WINDOW_MS = 10 * 60 * 1000;
 
-function categoryFromFormData(formData: FormData): CustomOrderCategory {
-  const raw = String(formData.get("category") ?? "");
-  return (VALID_CATEGORIES as string[]).includes(raw) ? (raw as CustomOrderCategory) : "other";
-}
-
-function quantityFromFormData(formData: FormData): number {
-  const parsed = Number(formData.get("quantity"));
-  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
-}
-
 // Public — anyone can request a custom build, no admin session needed.
 export async function createCustomOrderAction(formData: FormData) {
-  // Honeypot — see the matching hidden field in page.tsx for why.
+  // Honeypot, then timing check, then rate limit — the same three layers as the
+  // ticket form; see src/app/contact/actions.ts for why each one is there.
   if (String(formData.get("company") ?? "").trim()) {
+    redirect("/?submitted=1#custom-build");
+  }
+
+  if (submittedTooFast(formData.get("started"))) {
     redirect("/?submitted=1#custom-build");
   }
 
@@ -32,23 +36,27 @@ export async function createCustomOrderAction(formData: FormData) {
     redirect("/?error=rate-limited#custom-build");
   }
 
-  const name = String(formData.get("name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const model = String(formData.get("model") ?? "").trim();
-  const details = String(formData.get("details") ?? "").trim();
-  const budget = String(formData.get("budget") ?? "").trim();
+  const name = singleLine(formData.get("name"), FIELD_LIMITS.name);
+  const email = singleLine(formData.get("email"), FIELD_LIMITS.email);
+  const model = singleLine(formData.get("model"), FIELD_LIMITS.model);
+  const budget = singleLine(formData.get("budget"), FIELD_LIMITS.budget);
+  const details = multiLine(formData.get("details"), FIELD_LIMITS.freeText);
 
-  if (name && email && details) {
-    createCustomOrder({
-      name,
-      email,
-      category: categoryFromFormData(formData),
-      model: model || null,
-      quantity: quantityFromFormData(formData),
-      details,
-      budget: budget || null,
-    });
+  if (!name || !details || !isValidEmail(email)) {
+    redirect("/?error=invalid#custom-build");
   }
+
+  // Awaited for the same reason as the ticket form: redirect() throws, and an
+  // unawaited write races the response.
+  await createCustomOrder({
+    name,
+    email,
+    category: oneOf(formData.get("category"), VALID_CATEGORIES, "other"),
+    model: model || null,
+    quantity: boundedQuantity(formData.get("quantity")),
+    details,
+    budget: budget || null,
+  });
 
   redirect("/?submitted=1#custom-build");
 }
