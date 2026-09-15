@@ -21,7 +21,7 @@ export function EmployeeForm({
           name="name"
           required
           defaultValue={employee?.name}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
       </label>
 
@@ -32,27 +32,27 @@ export function EmployeeForm({
           required
           autoComplete="username"
           defaultValue={employee?.username}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
         {employee ? "New password" : "Password"}{" "}
-        {employee && <span className="font-normal text-zinc-500">(leave blank to keep current)</span>}
+        {employee && <span className="font-normal text-neutral-500">(leave blank to keep current)</span>}
         <input
           type="password"
           name="password"
           autoComplete="new-password"
           required={!employee}
           minLength={8}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
-        <span className="text-xs font-normal text-zinc-500">At least 8 characters.</span>
+        <span className="text-xs font-normal text-neutral-500">At least 8 characters.</span>
       </label>
 
       <button
         type="submit"
-        className="self-start rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+        className="self-start rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
       >
         {submitLabel}
       </button>

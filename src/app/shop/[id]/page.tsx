@@ -37,7 +37,7 @@ export default async function ShopItemPage({
             {asset.images.slice(1).map((img) => (
               <div
                 key={img.id}
-                className="surface relative aspect-square overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800"
+                className="surface relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800"
               >
                 <Image src={img.url} alt={asset.name} fill sizes="120px" className="object-cover" />
               </div>
@@ -49,16 +49,16 @@ export default async function ShopItemPage({
       <div className="flex flex-col gap-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{asset.name}</h1>
-          <p className="text-slate-500">{asset.model}</p>
+          <p className="text-neutral-500">{asset.model}</p>
         </div>
 
         <p className="text-3xl font-semibold">{formatPrice(asset.priceCents)}</p>
 
-        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{asset.description}</p>
+        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">{asset.description}</p>
 
-        <dl className="text-sm text-slate-500">
+        <dl className="text-sm text-neutral-500">
           <div className="flex gap-2">
-            <dt className="font-medium text-slate-700 dark:text-slate-300">Serial number:</dt>
+            <dt className="font-medium text-neutral-700 dark:text-neutral-300">Serial number:</dt>
             <dd className="font-mono">{asset.serialNumber}</dd>
           </div>
         </dl>
@@ -66,14 +66,14 @@ export default async function ShopItemPage({
         {asset.parts.length > 0 && (
           <div className="surface rounded-xl p-4">
             <h2 className="mb-2 text-sm font-semibold">Included parts</h2>
-            <ul className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400">
+            <ul className="flex flex-col gap-1 text-sm text-neutral-600 dark:text-neutral-400">
               {asset.parts.map((part) => (
                 <li
                   key={part.id}
-                  className="flex justify-between gap-4 border-b border-slate-200 py-1.5 last:border-0 dark:border-slate-800"
+                  className="flex justify-between gap-4 border-b border-neutral-200 py-1.5 last:border-0 dark:border-neutral-800"
                 >
                   <span>{part.name}</span>
-                  <span className="font-mono text-xs text-slate-400">{part.serialNumber}</span>
+                  <span className="font-mono text-xs text-neutral-400">{part.serialNumber}</span>
                 </li>
               ))}
             </ul>
@@ -83,16 +83,16 @@ export default async function ShopItemPage({
         {asset.storageDevices.length > 0 && (
           <div className="surface rounded-xl p-4">
             <h2 className="mb-2 text-sm font-semibold">Storage</h2>
-            <ul className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-400">
+            <ul className="flex flex-col gap-1 text-sm text-neutral-600 dark:text-neutral-400">
               {asset.storageDevices.map((device) => (
                 <li
                   key={device.id}
-                  className="flex justify-between gap-4 border-b border-slate-200 py-1.5 last:border-0 dark:border-slate-800"
+                  className="flex justify-between gap-4 border-b border-neutral-200 py-1.5 last:border-0 dark:border-neutral-800"
                 >
                   <span>
                     {device.capacityGb}GB {STORAGE_TYPE_LABELS[device.type]}
                   </span>
-                  <span className="font-mono text-xs text-slate-400">{device.serialNumber}</span>
+                  <span className="font-mono text-xs text-neutral-400">{device.serialNumber}</span>
                 </li>
               ))}
             </ul>
@@ -103,11 +103,11 @@ export default async function ShopItemPage({
           <button
             type="button"
             disabled
-            className="cursor-not-allowed rounded-lg bg-indigo-600/50 px-6 py-3 text-sm font-semibold text-white"
+            className="cursor-not-allowed rounded-lg bg-brand-600/50 px-6 py-3 text-sm font-semibold text-white"
           >
             Buy now
           </button>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-neutral-400">
             Checkout isn&apos;t wired up yet — contact the seller directly for now.
           </p>
         </div>

@@ -26,7 +26,7 @@ export function AssetForm({
             name="name"
             required
             defaultValue={asset?.name}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium">
@@ -35,7 +35,7 @@ export function AssetForm({
             name="model"
             required
             defaultValue={asset?.model}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium">
@@ -44,7 +44,7 @@ export function AssetForm({
             name="serialNumber"
             required
             defaultValue={asset?.serialNumber}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium">
@@ -56,7 +56,7 @@ export function AssetForm({
             min="0"
             required
             defaultValue={asset ? (asset.priceCents / 100).toFixed(2) : undefined}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </label>
       </div>
@@ -67,18 +67,18 @@ export function AssetForm({
           name="description"
           rows={3}
           defaultValue={asset?.description}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
-        Location <span className="font-normal text-zinc-500">(optional — where the item physically is)</span>
+        Location <span className="font-normal text-neutral-500">(optional — where the item physically is)</span>
         <input
           name="location"
           list="asset-locations"
           placeholder="e.g. Warehouse A, Shelf 3"
           defaultValue={asset?.location ?? ""}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
         <datalist id="asset-locations">
           {existingLocations.map((loc) => (
@@ -92,7 +92,7 @@ export function AssetForm({
         <select
           name="group"
           defaultValue={asset?.group ?? ""}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         >
           <option value="">— None —</option>
           {existingGroups.map((g) => (
@@ -101,19 +101,19 @@ export function AssetForm({
             </option>
           ))}
         </select>
-        <p className="text-xs font-normal text-zinc-500">
+        <p className="text-xs font-normal text-neutral-500">
           Don&apos;t see the group you want? Add it from the asset inventory page first.
         </p>
       </label>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
-        Assigned to <span className="font-normal text-zinc-500">(optional — your name or an employee&apos;s)</span>
+        Assigned to <span className="font-normal text-neutral-500">(optional — your name or an employee&apos;s)</span>
         <input
           name="assignedTo"
           list="asset-assignees"
           placeholder="e.g. Jordan Lee"
           defaultValue={asset?.assignedTo ?? ""}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
         <datalist id="asset-assignees">
           {existingAssignees.map((name) => (
@@ -133,10 +133,10 @@ export function AssetForm({
           name="photos"
           accept="image/*"
           multiple
-          className="text-sm file:mr-3 file:rounded file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-sm file:text-white"
+          className="text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-600 file:px-3 file:py-1.5 file:text-sm file:text-white"
         />
         {asset && asset.images.length > 0 && (
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-neutral-500">
             Uploading new photos replaces the {asset.images.length} existing photo
             {asset.images.length === 1 ? "" : "s"}. Leave empty to keep them.
           </p>
@@ -145,7 +145,7 @@ export function AssetForm({
 
       <button
         type="submit"
-        className="self-start rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+        className="self-start rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
       >
         {submitLabel}
       </button>

@@ -1,21 +1,54 @@
 @import "tailwindcss";
 
 /*
- * Two-layer surface system: the page sits on a slightly tinted base, and every
- * card/panel sits on a lighter "surface" above it. That difference is what makes
- * boxes read as raised without needing heavy borders. Everything is in the slate
- * family so the neutral grays, the dark feature band, and the accents all share
- * the same temperature instead of mixing warm/cool grays.
+ * Brand palette: red, white, and black, taken from the Ohio Pro Tech logo.
+ *
+ * Use `brand-*` (bg-brand-600, text-brand-600, ...) anywhere the brand color
+ * belongs, never a raw red — this block is the single place the brand color is
+ * defined, so retuning it is a one-line change here.
+ *
+ * - brand-500 is the logo's exact red (#EC1414, sampled from opts-logo.png).
+ *   Use it for icons and decorative accents.
+ * - brand-600 is a touch deeper and is what buttons and red text use. White on
+ *   the logo red is 4.49:1, just under the 4.5:1 AA minimum for body-size text;
+ *   brand-600 is 5.5:1, and at this size the difference isn't visible.
+ * - brand-400 is the dark-mode text shade: the logo red on near-black is also
+ *   just under 4.5:1, this is 5.5:1.
+ *
+ * Plain Tailwind `red-*` stays reserved for destructive/error states (Delete
+ * links, error banners), so "brand" and "danger" can be told apart in code.
+ */
+@theme {
+  --color-brand-50: #fef2f2;
+  --color-brand-100: #fde1e1;
+  --color-brand-200: #fac4c4;
+  --color-brand-300: #f68a8a;
+  --color-brand-400: #f24848;
+  --color-brand-500: #ec1414;
+  --color-brand-600: #d11212;
+  --color-brand-700: #b00f0f;
+  --color-brand-800: #8f0d0d;
+  --color-brand-900: #6e0b0b;
+  --color-brand-950: #3d0606;
+}
+
+/*
+ * Two-layer surface system: the page sits on a very slightly off-white base, and
+ * every card/panel sits on a pure white "surface" above it. That difference is
+ * what makes boxes read as raised without needing heavy borders.
+ *
+ * Neutrals are Tailwind's `neutral` family — pure gray, no color cast. The
+ * previous slate grays had a blue undertone that fought the red.
  */
 :root {
-  --background: #f6f8fb;
-  --foreground: #0f172a;
+  --background: #f6f6f6;
+  --foreground: #0a0a0a;
   --surface: #ffffff;
-  --surface-border: #dfe5ee;
+  --surface-border: #e5e5e5;
   /* Bright hairline along the top edge — the "bevel". */
   --surface-bevel: rgb(255 255 255 / 1);
-  --surface-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 6px 16px -6px rgb(15 23 42 / 0.1);
-  --field-shadow: inset 0 1px 2px 0 rgb(15 23 42 / 0.07);
+  --surface-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 6px 16px -6px rgb(0 0 0 / 0.1);
+  --field-shadow: inset 0 1px 2px 0 rgb(0 0 0 / 0.06);
 }
 
 @theme inline {
@@ -27,10 +60,10 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #080c14;
-    --foreground: #e2e8f0;
-    --surface: #121a28;
-    --surface-border: #222e42;
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --surface: #171717;
+    --surface-border: #2a2a2a;
     --surface-bevel: rgb(255 255 255 / 0.07);
     --surface-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 6px 16px -6px rgb(0 0 0 / 0.6);
     --field-shadow: inset 0 1px 2px 0 rgb(0 0 0 / 0.35);
@@ -63,10 +96,10 @@ body {
 
 .field:focus {
   outline: none;
-  border-color: var(--color-indigo-500);
-  box-shadow: var(--field-shadow), 0 0 0 3px rgb(99 102 241 / 0.25);
+  border-color: var(--color-brand-500);
+  box-shadow: var(--field-shadow), 0 0 0 3px rgb(236 20 20 / 0.2);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-indigo-600) 25%, transparent);
+  background: color-mix(in srgb, var(--color-brand-500) 22%, transparent);
 }

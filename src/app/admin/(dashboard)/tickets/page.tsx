@@ -21,7 +21,7 @@ export default async function TicketsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Support tickets</h1>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-neutral-500">
           {openCount} open, {tickets.length - openCount} completed
         </span>
       </div>
@@ -33,11 +33,11 @@ export default async function TicketsPage() {
       </datalist>
 
       {tickets.length === 0 ? (
-        <p className="text-slate-500">No tickets submitted yet.</p>
+        <p className="text-neutral-500">No tickets submitted yet.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-            <thead className="bg-slate-50 text-left dark:bg-slate-800">
+        <div className="overflow-x-auto rounded-lg border border-neutral-300 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+          <table className="min-w-full divide-y divide-neutral-200 text-sm dark:divide-neutral-800">
+            <thead className="bg-neutral-50 text-left dark:bg-neutral-800">
               <tr>
                 <th className="px-4 py-2 font-medium">Submitted</th>
                 <th className="px-4 py-2 font-medium">Name</th>
@@ -49,20 +49,20 @@ export default async function TicketsPage() {
                 <th className="px-4 py-2 font-medium">Done</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
               {tickets.map((ticket) => (
                 <tr key={ticket.id} className={ticket.completed ? "opacity-50" : undefined}>
-                  <td className="whitespace-nowrap px-4 py-2 text-slate-500">{formatDate(ticket.createdAt)}</td>
+                  <td className="whitespace-nowrap px-4 py-2 text-neutral-500">{formatDate(ticket.createdAt)}</td>
                   <td className="px-4 py-2">
                     <Link href={`/admin/tickets/${ticket.id}`} className="font-medium underline">
                       {ticket.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-slate-500">{ticket.email}</td>
+                  <td className="px-4 py-2 text-neutral-500">{ticket.email}</td>
                   <td className="whitespace-nowrap px-4 py-2">{CATEGORY_LABELS[ticket.category]}</td>
                   <td className="px-4 py-2 max-w-sm">{ticket.description}</td>
                   <td className="whitespace-nowrap px-4 py-2">
-                    <Link href={`/admin/tickets/${ticket.id}`} className="text-slate-500 underline">
+                    <Link href={`/admin/tickets/${ticket.id}`} className="text-neutral-500 underline">
                       {ticket.assetIds.length} linked
                     </Link>
                   </td>
@@ -73,9 +73,9 @@ export default async function TicketsPage() {
                         list="ticket-assignees"
                         placeholder="Unassigned"
                         defaultValue={ticket.assignedTo ?? ""}
-                        className="w-32 rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-800"
+                        className="w-32 rounded border border-neutral-300 px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-800"
                       />
-                      <button type="submit" className="text-sm font-medium text-indigo-600 underline dark:text-indigo-400">
+                      <button type="submit" className="text-sm font-medium text-brand-600 underline dark:text-brand-400">
                         Save
                       </button>
                     </form>

@@ -24,7 +24,7 @@ export function CompletionCheckbox({
           action(id, completed);
         });
       }}
-      className="h-4 w-4 rounded border-slate-400 accent-indigo-600"
+      className="h-4 w-4 rounded border-neutral-400 accent-brand-600"
     />
   );
 }

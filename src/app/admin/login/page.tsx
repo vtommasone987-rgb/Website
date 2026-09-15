@@ -8,15 +8,15 @@ export default async function AdminLoginPage({
   const { from, error } = await searchParams;
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-950 px-4 py-16 -mx-6 -my-8">
-      <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Back office</p>
-        <h1 className="mt-1 text-xl font-semibold text-slate-50">Seller sign in</h1>
-        <p className="mt-1 text-sm text-slate-400">This area is for inventory management only.</p>
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-neutral-950 px-4 py-16 -mx-6 -my-8">
+      <div className="w-full max-w-sm rounded-xl border border-neutral-800 bg-neutral-900 p-8 shadow-xl">
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Back office</p>
+        <h1 className="mt-1 text-xl font-semibold text-neutral-50">Seller sign in</h1>
+        <p className="mt-1 text-sm text-neutral-400">This area is for inventory management only.</p>
 
         <form action={loginAction} className="mt-6 flex flex-col gap-4">
           <input type="hidden" name="from" value={from ?? "/admin"} />
-          <label className="flex flex-col gap-1 text-sm font-medium text-slate-200">
+          <label className="flex flex-col gap-1 text-sm font-medium text-neutral-200">
             Username
             <input
               type="text"
@@ -24,17 +24,17 @@ export default async function AdminLoginPage({
               required
               autoFocus
               autoComplete="username"
-              className="rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-indigo-500"
+              className="rounded border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-50 outline-none focus:border-brand-500"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-slate-200">
+          <label className="flex flex-col gap-1 text-sm font-medium text-neutral-200">
             Password
             <input
               type="password"
               name="password"
               required
               autoComplete="current-password"
-              className="rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-indigo-500"
+              className="rounded border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-50 outline-none focus:border-brand-500"
             />
           </label>
           {error === "rate-limited" && (
@@ -45,7 +45,7 @@ export default async function AdminLoginPage({
           )}
           <button
             type="submit"
-            className="rounded bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+            className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
           >
             Sign in
           </button>

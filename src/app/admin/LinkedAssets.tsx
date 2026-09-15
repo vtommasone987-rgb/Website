@@ -18,15 +18,15 @@ export function LinkedAssets({
     <div className="flex flex-col gap-3">
       <div>
         <h2 className="text-lg font-semibold">Linked assets</h2>
-        <p className="text-sm text-slate-500">Attach inventory assets — e.g. the specific unit this relates to.</p>
+        <p className="text-sm text-neutral-500">Attach inventory assets — e.g. the specific unit this relates to.</p>
       </div>
 
       {linkedAssets.length === 0 ? (
-        <p className="text-sm text-slate-500">No assets linked yet.</p>
+        <p className="text-sm text-neutral-500">No assets linked yet.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-            <thead className="bg-slate-50 text-left dark:bg-slate-800">
+        <div className="overflow-x-auto rounded-lg border border-neutral-300 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+          <table className="min-w-full divide-y divide-neutral-200 text-sm dark:divide-neutral-800">
+            <thead className="bg-neutral-50 text-left dark:bg-neutral-800">
               <tr>
                 <th className="px-4 py-2 font-medium">Asset #</th>
                 <th className="px-4 py-2 font-medium">Name</th>
@@ -36,17 +36,17 @@ export function LinkedAssets({
                 <th className="px-4 py-2 font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
               {linkedAssets.map((asset) => (
                 <tr key={asset.id}>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-500">{asset.assetNumber}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-500">{asset.assetNumber}</td>
                   <td className="px-4 py-2">
                     <Link href={`/admin/assets/${asset.id}`} className="underline">
                       {asset.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-slate-500">{asset.model}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-500">{asset.serialNumber}</td>
+                  <td className="px-4 py-2 text-neutral-500">{asset.model}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-500">{asset.serialNumber}</td>
                   <td className="px-4 py-2">{formatPrice(asset.priceCents)}</td>
                   <td className="px-4 py-2">
                     <form action={removeAction.bind(null, asset.id)}>
@@ -69,7 +69,7 @@ export function LinkedAssets({
             <select
               name="assetId"
               required
-              className="min-w-[20rem] rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              className="min-w-[20rem] rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
             >
               {availableToAdd.map((asset) => (
                 <option key={asset.id} value={asset.id}>
@@ -80,13 +80,13 @@ export function LinkedAssets({
           </label>
           <button
             type="submit"
-            className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+            className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
           >
             Add
           </button>
         </form>
       ) : (
-        <p className="text-sm text-slate-500">Every inventory asset is already linked.</p>
+        <p className="text-sm text-neutral-500">Every inventory asset is already linked.</p>
       )}
     </div>
   );

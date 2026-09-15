@@ -17,7 +17,7 @@ export default async function EditAssetPage({
     return (
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold">Edit asset</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-neutral-500">
           &quot;{asset.name}&quot; was deleted. Restore it from{" "}
           <Link href="/admin/trash" className="underline">
             Trash
@@ -38,7 +38,7 @@ export default async function EditAssetPage({
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">
-          Edit asset <span className="font-mono text-lg font-normal text-slate-500">#{asset.assetNumber}</span>
+          Edit asset <span className="font-mono text-lg font-normal text-neutral-500">#{asset.assetNumber}</span>
         </h1>
         <form action={deleteAssetAction.bind(null, asset.id)}>
           <button type="submit" className="text-sm font-medium text-red-600 underline dark:text-red-400">
@@ -57,7 +57,7 @@ export default async function EditAssetPage({
       />
 
       {asset.status === "available" ? (
-        <div className="max-w-2xl rounded-lg border border-slate-300 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className="max-w-2xl rounded-lg border border-neutral-300 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
           <h2 className="mb-2 text-sm font-semibold">Mark as sold</h2>
           <form action={markSoldAction.bind(null, asset.id)} className="flex items-end gap-3">
             <label className="flex flex-col gap-1 text-sm font-medium">
@@ -69,23 +69,23 @@ export default async function EditAssetPage({
                 min="0"
                 required
                 defaultValue={(asset.priceCents / 100).toFixed(2)}
-                className="rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
               />
             </label>
             <button
               type="submit"
-              className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+              className="rounded bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
             >
               Record sale
             </button>
           </form>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-neutral-500">
             This records a sale for analytics and removes it from the storefront. It doesn&apos;t process a real
             payment — hook up a payment provider later if you want buyers to check out directly.
           </p>
         </div>
       ) : (
-        <p className="text-sm text-zinc-500">This asset is marked sold and no longer listed on the storefront.</p>
+        <p className="text-sm text-neutral-500">This asset is marked sold and no longer listed on the storefront.</p>
       )}
     </div>
   );

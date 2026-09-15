@@ -11,29 +11,29 @@ export default async function ContactPage({
     <div className="flex max-w-2xl flex-col gap-8">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Contact us</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
+        <p className="mt-2 text-neutral-600 dark:text-neutral-400">
           Questions about a listing, an order, or anything else — reach out and we&apos;ll get back to you.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="surface rounded-xl p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">
+          <h2 className="text-xs font-semibold tracking-wide text-brand-600 uppercase dark:text-brand-400">
             Address
           </h2>
           <p className="mt-1 font-medium">7250 Commerce Drive. Mentor, Ohio 44060</p>
         </div>
         <div className="surface rounded-xl p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">Email</h2>
+          <h2 className="text-xs font-semibold tracking-wide text-brand-600 uppercase dark:text-brand-400">Email</h2>
           {/* PLACEHOLDER — replace with your real support address */}
           <p className="mt-1 font-medium">support@example.com</p>
         </div>
         <div className="surface rounded-xl p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">Phone</h2>
+          <h2 className="text-xs font-semibold tracking-wide text-brand-600 uppercase dark:text-brand-400">Phone</h2>
           <p className="mt-1 font-medium">(440) 290-9160</p>
         </div>
         <div className="surface rounded-xl p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">Hours</h2>
+          <h2 className="text-xs font-semibold tracking-wide text-brand-600 uppercase dark:text-brand-400">Hours</h2>
           {/* PLACEHOLDER — replace with your real hours */}
           <p className="mt-1 font-medium">Mon–Fri, 9am–5pm</p>
         </div>
@@ -42,7 +42,7 @@ export default async function ContactPage({
       <div className="flex flex-col gap-4">
         <div>
           <h2 className="text-xl font-semibold">Submit a support ticket</h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             Have a warranty claim, need a repair, or just want to share feedback? Let us know what&apos;s going on.
           </p>
         </div>
@@ -103,17 +103,17 @@ export default async function ContactPage({
 
           <button
             type="submit"
-            className="self-start rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.2),0_1px_2px_0_rgb(15_23_42_/_0.2)] transition-colors hover:bg-indigo-500"
+            className="self-start rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.2),0_1px_2px_0_rgb(0_0_0_/_0.2)] transition-colors hover:bg-brand-700"
           >
             Submit ticket
           </button>
         </form>
       </div>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-neutral-400">
         The email and hours above are still placeholders — the address and phone number are real, but the rest
         isn&apos;t yet. Edit them in{" "}
-        <code className="rounded bg-slate-200/60 px-1 py-0.5 dark:bg-slate-800">src/app/contact/page.tsx</code>.
+        <code className="rounded bg-neutral-200/60 px-1 py-0.5 dark:bg-neutral-800">src/app/contact/page.tsx</code>.
       </p>
     </div>
   );

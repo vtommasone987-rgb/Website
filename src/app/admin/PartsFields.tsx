@@ -15,20 +15,20 @@ export function PartsFields({ existingParts = [] }: { existingParts?: Part[] }) 
             name={`part-name-${i}`}
             placeholder="Part name"
             defaultValue={existingParts[i]?.name}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
           <input
             name={`part-serial-${i}`}
             placeholder="Part serial number"
             defaultValue={existingParts[i]?.serialNumber}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </div>
       ))}
       <button
         type="button"
         onClick={() => setRowCount((count) => count + 1)}
-        className="self-start text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+        className="self-start text-sm font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400"
       >
         + Add another part
       </button>

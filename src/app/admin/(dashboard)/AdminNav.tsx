@@ -27,8 +27,8 @@ export function AdminNav({ isAdmin }: { isAdmin: boolean }) {
             href={tab.href}
             className={`border-b-2 pb-3 transition-colors ${
               active
-                ? "border-indigo-600 text-slate-950 dark:text-slate-50"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:hover:border-slate-700 dark:hover:text-slate-50"
+                ? "border-brand-600 text-neutral-950 dark:text-neutral-50"
+                : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-900 dark:hover:border-neutral-700 dark:hover:text-neutral-50"
             }`}
           >
             {tab.label}

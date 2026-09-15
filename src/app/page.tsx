@@ -116,7 +116,7 @@ export default async function Home({
     <div className="flex flex-col gap-24 sm:gap-32">
       <section className="flex flex-col gap-10 py-14 sm:py-20">
         <div className="flex flex-col items-start gap-6">
-          <p className="text-xs font-semibold tracking-widest text-indigo-600 uppercase dark:text-indigo-400">
+          <p className="text-xs font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
             Ohio Pro Tech &amp; Services LLC
           </p>
           <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -125,11 +125,11 @@ export default async function Home({
 
           <ul className="flex flex-col gap-3">
             {differentiators.map((line) => (
-              <li key={line} className="flex gap-3 text-slate-700 dark:text-slate-300">
+              <li key={line} className="flex gap-3 text-neutral-700 dark:text-neutral-300">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
-                  className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-400"
+                  className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400"
                   aria-hidden="true"
                 >
                   <path
@@ -148,13 +148,13 @@ export default async function Home({
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <Link
               href="/shop"
-              className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.2),0_1px_2px_0_rgb(15_23_42_/_0.2)] transition-colors hover:bg-indigo-500"
+              className="rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.15),0_1px_2px_0_rgb(0_0_0_/_0.2)] transition-colors hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               Browse what&apos;s for sale
             </Link>
             <Link
               href="#custom-build"
-              className="surface rounded-full px-6 py-3 text-sm font-semibold transition-colors hover:border-slate-400 dark:hover:border-slate-600"
+              className="surface rounded-full px-6 py-3 text-sm font-semibold transition-colors hover:border-neutral-400 dark:hover:border-neutral-600"
             >
               Request a custom build
             </Link>
@@ -165,21 +165,21 @@ export default async function Home({
             as a footer to the hero rather than a competing column. */}
         <div className="surface flex flex-col gap-6 rounded-2xl p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
           <div>
-            <p className="text-xs font-semibold tracking-widest text-indigo-600 uppercase dark:text-indigo-400">
+            <p className="text-xs font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
               Talk to a tech
             </p>
             <p className="mt-2 text-lg font-semibold">Got something broken right now?</p>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
               Call us directly, or send the details and we&apos;ll pick it up from there.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 text-sm sm:flex-row sm:gap-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10 dark:border-slate-800">
+          <div className="flex flex-col gap-3 border-t border-neutral-200 pt-5 text-sm sm:flex-row sm:gap-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10 dark:border-neutral-800">
             <a
               href="tel:+14402909160"
-              className="flex items-center gap-3 font-semibold hover:text-indigo-600 dark:hover:text-indigo-400"
+              className="flex items-center gap-3 font-semibold hover:text-brand-600 dark:hover:text-brand-400"
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0 text-neutral-400" aria-hidden="true">
                 <path
                   d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"
                   stroke="currentColor"
@@ -189,8 +189,8 @@ export default async function Home({
               </svg>
               (440) 290-9160
             </a>
-            <p className="flex items-start gap-3 text-slate-600 dark:text-slate-400">
-              <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" aria-hidden="true">
+            <p className="flex items-start gap-3 text-neutral-600 dark:text-neutral-400">
+              <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-5 w-5 shrink-0 text-neutral-400" aria-hidden="true">
                 <path
                   d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"
                   stroke="currentColor"
@@ -207,7 +207,7 @@ export default async function Home({
 
           <Link
             href="/contact"
-            className="shrink-0 rounded-full bg-orange-500 px-5 py-2.5 text-center text-sm font-semibold text-slate-900 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.3),0_1px_2px_0_rgb(15_23_42_/_0.2)] transition-colors hover:bg-orange-400"
+            className="shrink-0 rounded-full bg-brand-600 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.3),0_1px_2px_0_rgb(0_0_0_/_0.2)] transition-colors hover:bg-brand-700"
           >
             Send us the details
           </Link>
@@ -216,11 +216,11 @@ export default async function Home({
 
       <section id="what-we-do" className="flex flex-col gap-8 scroll-mt-20">
         <div>
-          <p className="text-xs font-semibold tracking-widest text-indigo-600 uppercase dark:text-indigo-400">
+          <p className="text-xs font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
             Services
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">What We Do</h2>
-          <p className="mt-2 max-w-xl text-slate-600 dark:text-slate-400">
+          <p className="mt-2 max-w-xl text-neutral-600 dark:text-neutral-400">
             A small team that does a few things well, rather than everything at once.
           </p>
         </div>
@@ -228,11 +228,11 @@ export default async function Home({
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
             <div key={service.title} className="surface flex flex-col items-start gap-4 rounded-xl p-6">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.6)] dark:bg-indigo-500/10 dark:text-indigo-400 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.08)]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.6)] dark:bg-brand-500/10 dark:text-brand-400 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.08)]">
                 {service.icon}
               </span>
               <h3 className="text-lg font-semibold">{service.title}</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">{service.description}</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">{service.description}</p>
             </div>
           ))}
         </div>
@@ -240,21 +240,21 @@ export default async function Home({
 
       {/* Full-bleed dark band. The differentiator bullets that used to live here
           moved up into the hero, so this is now the mid-page call to action. */}
-      <section className="relative left-1/2 -mx-[50vw] w-screen bg-slate-900 py-16 ring-1 ring-white/5 sm:py-20 dark:bg-slate-900/60">
+      <section className="relative left-1/2 -mx-[50vw] w-screen bg-neutral-900 py-16 ring-1 ring-white/5 sm:py-20 dark:bg-neutral-900/60">
         <div className="mx-auto flex max-w-5xl flex-col items-start gap-8 px-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold tracking-widest text-orange-400 uppercase">Not a typical MSP</p>
+            <p className="text-xs font-semibold tracking-widest text-brand-400 uppercase">Not a typical MSP</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               No contracts. No call centers. Just the tech who knows your setup.
             </h2>
-            <p className="mt-4 text-lg text-slate-300">
+            <p className="mt-4 text-lg text-neutral-300">
               Tell us what you need — a one-off project, an hourly fix, or a whole fleet of machines — and
               we&apos;ll tell you straight whether it&apos;s something we do well.
             </p>
           </div>
           <Link
             href="/contact"
-            className="shrink-0 rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold text-slate-900 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.3),0_1px_2px_0_rgb(0_0_0_/_0.3)] transition-colors hover:bg-orange-400"
+            className="shrink-0 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.3),0_1px_2px_0_rgb(0_0_0_/_0.3)] transition-colors hover:bg-brand-700"
           >
             Contact us to discuss your needs
           </Link>
@@ -264,11 +264,11 @@ export default async function Home({
       {/* Full-bleed tinted band so the storefront reads as its own distinct area
           of the page rather than another block of text. */}
       {featured.length > 0 && (
-        <section className="relative left-1/2 -mx-[50vw] w-screen border-y border-slate-200 bg-slate-100/70 py-16 sm:py-20 dark:border-slate-800 dark:bg-slate-900/40">
+        <section className="relative left-1/2 -mx-[50vw] w-screen border-y border-neutral-200 bg-neutral-100/70 py-16 sm:py-20 dark:border-neutral-800 dark:bg-neutral-900/40">
           <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-indigo-600 uppercase dark:text-indigo-400">
+                <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                     <path
                       d="M4 6h16M4 6v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6M4 6l2-3h12l2 3M9 11a3 3 0 0 0 6 0"
@@ -281,14 +281,14 @@ export default async function Home({
                   The Store
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight">Recently listed</h2>
-                <p className="mt-2 max-w-xl text-slate-600 dark:text-slate-400">
+                <p className="mt-2 max-w-xl text-neutral-600 dark:text-neutral-400">
                   Refurbished equipment that&apos;s in stock and ready to ship — every unit tracked down to its
                   serial number.
                 </p>
               </div>
               <Link
                 href="/shop"
-                className="rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.2),0_1px_2px_0_rgb(15_23_42_/_0.2)] transition-colors hover:bg-indigo-500"
+                className="rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.15),0_1px_2px_0_rgb(0_0_0_/_0.2)] transition-colors hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
               >
                 Shop all listings →
               </Link>
@@ -299,7 +299,7 @@ export default async function Home({
                 <Link
                   key={asset.id}
                   href={`/shop/${asset.id}`}
-                  className="surface group flex flex-col overflow-hidden rounded-xl transition-colors hover:border-indigo-400 dark:hover:border-indigo-500"
+                  className="surface group flex flex-col overflow-hidden rounded-xl transition-colors hover:border-brand-400 dark:hover:border-brand-500"
                 >
                   <div className="relative">
                     <AssetThumbnail
@@ -309,15 +309,15 @@ export default async function Home({
                       className="aspect-[4/3]"
                     />
                     {/* Price as a tag on the photo — reads as a shop listing at a glance. */}
-                    <span className="absolute top-3 right-3 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur dark:bg-slate-950/90 dark:text-slate-50">
+                    <span className="absolute top-3 right-3 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-neutral-900 shadow-sm backdrop-blur dark:bg-neutral-950/90 dark:text-neutral-50">
                       {formatPrice(asset.priceCents)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1 p-4">
-                    <h3 className="font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                    <h3 className="font-medium group-hover:text-brand-600 dark:group-hover:text-brand-400">
                       {asset.name}
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{asset.model}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">{asset.model}</p>
                   </div>
                 </Link>
               ))}
@@ -328,11 +328,11 @@ export default async function Home({
 
       <section id="custom-build" className="flex max-w-2xl scroll-mt-20 flex-col gap-8">
         <div>
-          <p className="text-xs font-semibold tracking-widest text-indigo-600 uppercase dark:text-indigo-400">
+          <p className="text-xs font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
             Custom Work
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">Request a custom build</h2>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">
+          <p className="mt-2 text-neutral-600 dark:text-neutral-400">
             Need a PC build, laptop, or tablet configured for your specific needs — a single unit or a bulk order for
             a whole team? Tell us what you&apos;re looking for and we&apos;ll follow up with options and pricing.
           </p>
@@ -397,7 +397,7 @@ export default async function Home({
 
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1.5 text-sm font-medium">
-              Specific model <span className="font-normal text-slate-500">(optional)</span>
+              Specific model <span className="font-normal text-neutral-500">(optional)</span>
               <input
                 name="model"
                 placeholder="e.g. Dell Latitude 5440"
@@ -405,7 +405,7 @@ export default async function Home({
               />
             </label>
             <label className="flex flex-col gap-1.5 text-sm font-medium">
-              Budget <span className="font-normal text-slate-500">(optional)</span>
+              Budget <span className="font-normal text-neutral-500">(optional)</span>
               <input
                 name="budget"
                 placeholder="e.g. $1,000–$1,500, or per unit"
@@ -427,7 +427,7 @@ export default async function Home({
 
           <button
             type="submit"
-            className="self-start rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.2),0_1px_2px_0_rgb(15_23_42_/_0.2)] transition-colors hover:bg-indigo-500"
+            className="self-start rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.2),0_1px_2px_0_rgb(0_0_0_/_0.2)] transition-colors hover:bg-brand-700"
           >
             Submit request
           </button>

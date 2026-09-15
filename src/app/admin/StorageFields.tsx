@@ -22,7 +22,7 @@ export function StorageFields({ existingDevices = [] }: { existingDevices?: Stor
           <select
             name={`storage-type-${i}`}
             defaultValue={existingDevices[i]?.type ?? ""}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           >
             <option value="">— Type —</option>
             {STORAGE_TYPE_OPTIONS.map((opt) => (
@@ -37,20 +37,20 @@ export function StorageFields({ existingDevices = [] }: { existingDevices?: Stor
             placeholder="Capacity (GB)"
             min={0}
             defaultValue={existingDevices[i]?.capacityGb}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
           <input
             name={`storage-serial-${i}`}
             placeholder="Serial number"
             defaultValue={existingDevices[i]?.serialNumber}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </div>
       ))}
       <button
         type="button"
         onClick={() => setRowCount((count) => count + 1)}
-        className="self-start text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+        className="self-start text-sm font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400"
       >
         + Add another drive
       </button>

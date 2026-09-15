@@ -23,11 +23,11 @@ export function AssetThumbnail({
   className?: string;
 }) {
   return (
-    <div className={`relative overflow-hidden bg-slate-100 dark:bg-slate-800 ${className}`}>
+    <div className={`relative overflow-hidden bg-neutral-100 dark:bg-neutral-800 ${className}`}>
       {image ? (
         <Image src={image.url} alt={alt} fill sizes={sizes} priority={priority} className="object-cover" />
       ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-neutral-400 dark:text-neutral-500">
           <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8" aria-hidden="true">
             <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
             <circle cx="8.5" cy="10" r="1.5" stroke="currentColor" strokeWidth="1.5" />

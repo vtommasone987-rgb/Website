@@ -36,7 +36,7 @@ export default async function CustomOrderDetailPage({
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <Link href="/admin/custom-orders" className="text-sm text-slate-500 hover:underline">
+        <Link href="/admin/custom-orders" className="text-sm text-neutral-500 hover:underline">
           ← Back to custom orders
         </Link>
         <div className="mt-2 flex items-center justify-between">
@@ -48,30 +48,30 @@ export default async function CustomOrderDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border border-slate-300 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border border-neutral-300 bg-white p-4 text-sm dark:border-neutral-800 dark:bg-neutral-900">
         <div>
-          <span className="text-slate-500">Email:</span> {order.email}
+          <span className="text-neutral-500">Email:</span> {order.email}
         </div>
         <div>
-          <span className="text-slate-500">Submitted:</span> {formatDate(order.createdAt)}
+          <span className="text-neutral-500">Submitted:</span> {formatDate(order.createdAt)}
         </div>
         <div>
-          <span className="text-slate-500">Type:</span> {CATEGORY_LABELS[order.category]}
+          <span className="text-neutral-500">Type:</span> {CATEGORY_LABELS[order.category]}
         </div>
         <div>
-          <span className="text-slate-500">Quantity:</span> {order.quantity}
+          <span className="text-neutral-500">Quantity:</span> {order.quantity}
         </div>
         <div>
-          <span className="text-slate-500">Model requested:</span> {order.model ?? "—"}
+          <span className="text-neutral-500">Model requested:</span> {order.model ?? "—"}
         </div>
         <div>
-          <span className="text-slate-500">Budget:</span> {order.budget ?? "—"}
+          <span className="text-neutral-500">Budget:</span> {order.budget ?? "—"}
         </div>
         <div className="col-span-2">
-          <span className="text-slate-500">Details:</span> {order.details}
+          <span className="text-neutral-500">Details:</span> {order.details}
         </div>
         <div className="col-span-2 flex items-center gap-2">
-          <span className="text-slate-500">Assigned to:</span>
+          <span className="text-neutral-500">Assigned to:</span>
           <datalist id="order-detail-assignees">
             {assignees.map((name) => (
               <option key={name} value={name} />
@@ -83,9 +83,9 @@ export default async function CustomOrderDetailPage({
               list="order-detail-assignees"
               placeholder="Unassigned"
               defaultValue={order.assignedTo ?? ""}
-              className="w-40 rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-800"
+              className="w-40 rounded border border-neutral-300 px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-800"
             />
-            <button type="submit" className="text-sm font-medium text-indigo-600 underline dark:text-indigo-400">
+            <button type="submit" className="text-sm font-medium text-brand-600 underline dark:text-brand-400">
               Save
             </button>
           </form>
