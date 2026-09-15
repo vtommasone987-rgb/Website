@@ -7,6 +7,7 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { detectImageType, MAX_IMAGE_BYTES, MAX_IMAGES_PER_ASSET } from "@/lib/uploads";
+import { multiLine, singleLine } from "@/lib/validate";
 import {
   addAssetToCustomOrder,
   addAssetToTicket,
@@ -66,36 +67,96 @@ async function assertOwner() {
   }
 }
 
+/**
+ * Field limits for the admin forms.
+ *
+ * These are authenticated actions, so the threat model differs from the public
+ * forms: not spam, but malformed or oversized values reaching the database. A
+ * server action is a plain POST endpoint whoever is signed in can call directly,
+ * and a stray paste or a request built outside the UI shouldn't be able to store
+ * a megabyte of text, a negative price, or NaN.
+ */
+const ADMIN_LIMITS = {
+  shortText: 200,
+  freeText: 5_000,
+  /** $1,000,000. Anything above this is a typo, not a price. */
+  maxPriceCents: 100_000_000,
+  maxQuantity: 10_000,
+  maxCapacityGb: 1_000_000,
+  /** scrypt is deliberately slow, so an unbounded password is a CPU-exhaustion vector. */
+  maxPasswordLength: 200,
+} as const;
+
+/** Single-line admin field: control characters and line breaks stripped, length capped. */
+function adminText(formData: FormData, key: string, maxLength: number = ADMIN_LIMITS.shortText): string {
+  return singleLine(formData.get(key), maxLength);
+}
+
+/** Same, but empty becomes null for the optional columns. */
+function optionalString(formData: FormData, key: string): string | null {
+  return adminText(formData, key) || null;
+}
+
+/** Multi-line admin field (descriptions, notes): newlines kept, length capped. */
+function adminLongText(formData: FormData, key: string): string {
+  return multiLine(formData.get(key), ADMIN_LIMITS.freeText);
+}
+
+function optionalLongText(formData: FormData, key: string): string | null {
+  return adminLongText(formData, key) || null;
+}
+
 function centsFromDollarsInput(value: FormDataEntryValue | null): number {
   const dollars = Number(value ?? 0);
-  return Math.round(dollars * 100);
+  // Non-numeric input previously produced NaN and carried it into the database.
+  if (!Number.isFinite(dollars) || dollars < 0) return 0;
+  return Math.min(Math.round(dollars * 100), ADMIN_LIMITS.maxPriceCents);
 }
 
 function groupFromFormData(formData: FormData): string | null {
-  const value = String(formData.get("group") ?? "").trim();
-  return value || null;
+  return optionalString(formData, "group");
 }
 
 function locationFromFormData(formData: FormData): string | null {
-  const value = String(formData.get("location") ?? "").trim();
-  return value || null;
-}
-
-function optionalString(formData: FormData, key: string): string | null {
-  const value = String(formData.get(key) ?? "").trim();
-  return value || null;
+  return optionalString(formData, "location");
 }
 
 function positiveIntFromFormData(formData: FormData, key: string): number {
   const parsed = Number(formData.get(key));
-  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
+  if (!Number.isFinite(parsed) || parsed < 1) return 1;
+  return Math.min(Math.floor(parsed), ADMIN_LIMITS.maxQuantity);
+}
+
+/** A plain calendar date (YYYY-MM-DD), as produced by <input type="date">. */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Purchase dates are stored as bare "YYYY-MM-DD" strings (see CLAUDE.md for why
+ * they never become timestamps). Anything not in that shape would be rendered
+ * back verbatim, so fall back to today rather than storing junk.
+ */
+function dateOnlyFromFormData(formData: FormData, key: string): string {
+  const value = singleLine(formData.get(key), 10);
+  if (DATE_ONLY_PATTERN.test(value) && !Number.isNaN(Date.parse(value))) return value;
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * A password is exactly the bytes the person chose, so this neither trims nor
+ * strips it — "cleaning" a password silently changes it. Over-length is rejected
+ * by the caller rather than truncated here, since truncating would store one
+ * value and then fail to match the full one at login.
+ */
+function rawPassword(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : "";
 }
 
 function partsFromFormData(formData: FormData) {
   const parts: { name: string; serialNumber: string }[] = [];
   for (let i = 0; i < MAX_PARTS; i++) {
-    const name = String(formData.get(`part-name-${i}`) ?? "").trim();
-    const serialNumber = String(formData.get(`part-serial-${i}`) ?? "").trim();
+    const name = adminText(formData, `part-name-${i}`);
+    const serialNumber = adminText(formData, `part-serial-${i}`);
     if (name || serialNumber) {
       parts.push({ name, serialNumber });
     }
@@ -106,12 +167,16 @@ function partsFromFormData(formData: FormData) {
 function storageDevicesFromFormData(formData: FormData) {
   const devices: { type: StorageType; capacityGb: number; serialNumber: string }[] = [];
   for (let i = 0; i < MAX_STORAGE_DEVICES; i++) {
-    const rawType = String(formData.get(`storage-type-${i}`) ?? "").trim();
-    const capacityGb = Number(formData.get(`storage-capacity-${i}`) ?? 0);
-    const serialNumber = String(formData.get(`storage-serial-${i}`) ?? "").trim();
-    if (!rawType && !capacityGb && !serialNumber) continue;
+    const rawType = adminText(formData, `storage-type-${i}`);
+    const rawCapacity = Number(formData.get(`storage-capacity-${i}`) ?? 0);
+    const serialNumber = adminText(formData, `storage-serial-${i}`);
+    if (!rawType && !rawCapacity && !serialNumber) continue;
     const type = (VALID_STORAGE_TYPES as string[]).includes(rawType) ? (rawType as StorageType) : "other";
-    devices.push({ type, capacityGb: Number.isFinite(capacityGb) ? capacityGb : 0, serialNumber });
+    const capacityGb =
+      Number.isFinite(rawCapacity) && rawCapacity > 0
+        ? Math.min(Math.floor(rawCapacity), ADMIN_LIMITS.maxCapacityGb)
+        : 0;
+    devices.push({ type, capacityGb, serialNumber });
   }
   return devices;
 }
@@ -162,11 +227,11 @@ export async function createAssetAction(formData: FormData) {
   await assertAdmin();
   const imageUrls = await savePhotos(formData);
   await createAsset({
-    name: String(formData.get("name") ?? ""),
-    model: String(formData.get("model") ?? ""),
-    serialNumber: String(formData.get("serialNumber") ?? ""),
+    name: adminText(formData, "name"),
+    model: adminText(formData, "model"),
+    serialNumber: adminText(formData, "serialNumber"),
     priceCents: centsFromDollarsInput(formData.get("price")),
-    description: String(formData.get("description") ?? ""),
+    description: adminLongText(formData, "description"),
     parts: partsFromFormData(formData),
     storageDevices: storageDevicesFromFormData(formData),
     imageUrls,
@@ -183,11 +248,11 @@ export async function updateAssetAction(id: string, formData: FormData) {
   await assertAdmin();
   const imageUrls = await savePhotos(formData);
   await updateAsset(id, {
-    name: String(formData.get("name") ?? ""),
-    model: String(formData.get("model") ?? ""),
-    serialNumber: String(formData.get("serialNumber") ?? ""),
+    name: adminText(formData, "name"),
+    model: adminText(formData, "model"),
+    serialNumber: adminText(formData, "serialNumber"),
     priceCents: centsFromDollarsInput(formData.get("price")),
-    description: String(formData.get("description") ?? ""),
+    description: adminLongText(formData, "description"),
     parts: partsFromFormData(formData),
     storageDevices: storageDevicesFromFormData(formData),
     imageUrls,
@@ -228,7 +293,7 @@ export async function permanentlyDeleteAssetAction(id: string) {
 
 export async function createGroupAction(formData: FormData) {
   await assertAdmin();
-  await createGroup(String(formData.get("name") ?? ""));
+  await createGroup(adminText(formData, "name"));
   // "layout" revalidates every page under /admin (including assets/new and
   // assets/[id], which render the group dropdown) — those routes don't take
   // an id, so a single literal revalidatePath("/admin") wouldn't reach them.
@@ -265,7 +330,7 @@ export async function setTicketAssigneeAction(ticketId: string, formData: FormDa
 
 export async function attachAssetToTicketAction(ticketId: string, formData: FormData) {
   await assertAdmin();
-  const assetId = String(formData.get("assetId") ?? "");
+  const assetId = adminText(formData, "assetId");
   if (assetId) {
     await addAssetToTicket(ticketId, assetId);
   }
@@ -289,7 +354,7 @@ export async function setCustomOrderAssigneeAction(orderId: string, formData: Fo
 
 export async function attachAssetToOrderAction(orderId: string, formData: FormData) {
   await assertAdmin();
-  const assetId = String(formData.get("assetId") ?? "");
+  const assetId = adminText(formData, "assetId");
   if (assetId) {
     await addAssetToCustomOrder(orderId, assetId);
   }
@@ -317,12 +382,12 @@ export async function markSoldAction(id: string, formData: FormData) {
 export async function createPurchaseAction(formData: FormData) {
   await assertAdmin();
   await createPurchase({
-    item: String(formData.get("item") ?? ""),
+    item: adminText(formData, "item"),
     vendor: optionalString(formData, "vendor"),
     quantity: positiveIntFromFormData(formData, "quantity"),
     totalCostCents: centsFromDollarsInput(formData.get("totalCost")),
-    purchasedAt: String(formData.get("purchasedAt") ?? ""),
-    notes: optionalString(formData, "notes"),
+    purchasedAt: dateOnlyFromFormData(formData, "purchasedAt"),
+    notes: optionalLongText(formData, "notes"),
     group: groupFromFormData(formData),
     assetId: optionalString(formData, "assetId"),
   });
@@ -333,12 +398,12 @@ export async function createPurchaseAction(formData: FormData) {
 export async function updatePurchaseAction(id: string, formData: FormData) {
   await assertAdmin();
   await updatePurchase(id, {
-    item: String(formData.get("item") ?? ""),
+    item: adminText(formData, "item"),
     vendor: optionalString(formData, "vendor"),
     quantity: positiveIntFromFormData(formData, "quantity"),
     totalCostCents: centsFromDollarsInput(formData.get("totalCost")),
-    purchasedAt: String(formData.get("purchasedAt") ?? ""),
-    notes: optionalString(formData, "notes"),
+    purchasedAt: dateOnlyFromFormData(formData, "purchasedAt"),
+    notes: optionalLongText(formData, "notes"),
     group: groupFromFormData(formData),
     assetId: optionalString(formData, "assetId"),
   });
@@ -371,7 +436,7 @@ export async function permanentlyDeletePurchaseAction(id: string) {
 
 export async function createPurchaseGroupAction(formData: FormData) {
   await assertAdmin();
-  await createPurchaseGroup(String(formData.get("name") ?? ""));
+  await createPurchaseGroup(adminText(formData, "name"));
   // "layout" so /admin/purchases/new and /admin/purchases/[id] (which render
   // the group dropdown) also pick up the new group immediately.
   revalidatePath("/admin", "layout");
@@ -380,10 +445,19 @@ export async function createPurchaseGroupAction(formData: FormData) {
 
 export async function createEmployeeAction(formData: FormData) {
   await assertAdmin();
+  const password = rawPassword(formData, "password");
+  if (password.length > ADMIN_LIMITS.maxPasswordLength) {
+    redirect(
+      `/admin/employees/new?error=${encodeURIComponent(
+        `Password must be ${ADMIN_LIMITS.maxPasswordLength} characters or fewer.`,
+      )}`,
+    );
+  }
+
   const result = await createEmployee({
-    name: String(formData.get("name") ?? ""),
-    username: String(formData.get("username") ?? ""),
-    password: String(formData.get("password") ?? ""),
+    name: adminText(formData, "name"),
+    username: adminText(formData, "username"),
+    password,
   });
   if (!result.ok) {
     redirect(`/admin/employees/new?error=${encodeURIComponent(result.error)}`);
@@ -396,10 +470,19 @@ export async function createEmployeeAction(formData: FormData) {
 
 export async function updateEmployeeAction(id: string, formData: FormData) {
   await assertAdmin();
-  const password = String(formData.get("password") ?? "");
+  const password = rawPassword(formData, "password");
+  if (password.length > ADMIN_LIMITS.maxPasswordLength) {
+    redirect(
+      `/admin/employees/${id}?error=${encodeURIComponent(
+        `Password must be ${ADMIN_LIMITS.maxPasswordLength} characters or fewer.`,
+      )}`,
+    );
+  }
+
   const result = await updateEmployee(id, {
-    name: String(formData.get("name") ?? ""),
-    username: String(formData.get("username") ?? ""),
+    name: adminText(formData, "name"),
+    username: adminText(formData, "username"),
+    // Blank means "leave the existing password alone".
     password: password.trim() ? password : undefined,
   });
   if (!result.ok) {
