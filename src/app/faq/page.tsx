@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 const faqs = [
   {
     q: "How accurate are the serial numbers and parts lists?",
@@ -17,14 +19,18 @@ const faqs = [
   },
 ];
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  // Rendered per request rather than prerendered at build: a CSP nonce only exists
+  // once there is a request, and Next can't stamp one onto build-time HTML. See src/proxy.ts.
+  await connection();
+
   return (
     <div className="flex flex-col gap-8 max-w-2xl">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Frequently asked questions</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
+        <p className="mt-2 text-neutral-600 dark:text-neutral-400">
           Don&apos;t see your question here?{" "}
-          <a href="/contact" className="font-medium text-indigo-600 underline underline-offset-2 dark:text-indigo-400">
+          <a href="/contact" className="font-medium text-brand-600 underline underline-offset-2 dark:text-brand-400">
             Contact us
           </a>
           .
@@ -35,20 +41,20 @@ export default function FaqPage() {
         {faqs.map((faq) => (
           <div
             key={faq.q}
-            className="surface rounded-xl p-5 transition-colors hover:border-slate-400 dark:hover:border-slate-600"
+            className="surface rounded-xl p-5 transition-colors hover:border-neutral-400 dark:hover:border-neutral-600"
           >
             <h2 className="flex items-start gap-2 font-semibold">
-              <span className="text-indigo-500 dark:text-indigo-400">Q.</span>
+              <span className="text-brand-500 dark:text-brand-400">Q.</span>
               {faq.q}
             </h2>
-            <p className="mt-2 pl-5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{faq.a}</p>
+            <p className="mt-2 pl-5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{faq.a}</p>
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-neutral-400">
         These are placeholder questions and answers — edit them in{" "}
-        <code className="rounded bg-slate-200/60 px-1 py-0.5 dark:bg-slate-800">src/app/faq/page.tsx</code>.
+        <code className="rounded bg-neutral-200/60 px-1 py-0.5 dark:bg-neutral-800">src/app/faq/page.tsx</code>.
       </p>
     </div>
   );

@@ -36,7 +36,12 @@ export async function loginAction(formData: FormData) {
   store.set(SESSION_COOKIE_NAME, createSessionValue(result.subject), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    // Strict, not lax: the cookie is never sent on a request that originated
+    // from another site, so a cross-site form post or image tag can't ride an
+    // existing admin session. Trade-off: following an external link straight to
+    // an /admin page shows the login screen once, since the browser withholds
+    // the cookie on that first cross-site navigation.
+    sameSite: "strict",
     path: "/",
   });
 
