@@ -1,0 +1,40 @@
+# Automatic dependency-update pull requests.
+#
+# This is the "don't rely on remembering to check" half of dependency security:
+# GitHub watches the advisory database and opens a PR when something we depend on
+# is patched. Security updates are opened regardless of the schedule below.
+#
+# Pairs with two settings that must be enabled in the repository itself (Settings
+# -> Code security), because they cannot be turned on from a file:
+#   - Dependabot alerts
+#   - Secret scanning + push protection
+# See SECURITY-CHECKLIST.md for the click-by-click steps.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    # Cap concurrent PRs so a quiet week doesn't bury the repo.
+    open-pull-requests-limit: 5
+    groups:
+      # Patch/minor bumps are noise individually and safer reviewed together.
+      # Security fixes still arrive as their own PRs.
+      routine-updates:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Prisma 8 is a major with breaking changes to config and driver adapters;
+      # upgrade it deliberately, not via an automated PR.
+      - dependency-name: prisma
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+
+  # Keeps any GitHub Actions workflows pinned to patched versions.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
