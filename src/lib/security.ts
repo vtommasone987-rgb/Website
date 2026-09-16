@@ -77,10 +77,27 @@ export function buildContentSecurityPolicy(nonce: string, isDevelopment: boolean
     // dev-time CSS injector writes inline styles it can't nonce, so development
     // drops the nonce rather than adding a keyword the browser would ignore.
     isDevelopment ? "style-src 'self' 'unsafe-inline'" : `style-src 'self' 'nonce-${nonce}'`,
-    // Separate directive for style *attributes*, which is what React writes when a
-    // component renders `style={{…}}` — next/image emits `style="color:transparent"`
-    // on every image, and style-src alone would block it. Splitting them keeps the
-    // strict no-inline rule on <style> elements, where injected CSS would actually hurt.
+    /**
+     * Style *attributes* only — the one deliberate `unsafe-` keyword in the
+     * production policy, and the narrowest form available.
+     *
+     * Verified against a real production build: removing this makes the browser
+     * block next/image's `style="color:transparent"` and log a violation on every
+     * page carrying an image. next/image is used for the logo, the shop grid, and
+     * the asset galleries, so the alternative is giving up image optimization on a
+     * storefront built around photos.
+     *
+     * Why not a hash instead, which would be tighter? The browser suggests one
+     * ('sha256-Wwucq8eX2r0YFymkQhDXm5hN0+FfSvI3s4JSSaqa4iw=' for `color:transparent`),
+     * but next/image emits a *different* style attribute for `fill` images than for
+     * fixed width/height ones. A hash allow-list would pass today, while no asset has
+     * a photo, and then silently break customer-facing images the first time one is
+     * uploaded. A stable policy beats a tighter one that fails quietly.
+     *
+     * What this does not permit, which is the part that matters: inline <style>
+     * elements and injected stylesheets are still blocked by `style-src` above, and a
+     * style attribute cannot execute JavaScript in any browser this app supports.
+     */
     ...(isDevelopment ? [] : ["style-src-attr 'unsafe-inline'"]),
     // blob:/data: cover next/image's own output, not remote hosts.
     "img-src 'self' blob: data:",
