@@ -173,3 +173,59 @@ model AssetGroup {
 model PurchaseGroup {
   name String @id
 }
+
+/// Two-factor enrollment for one login. Keyed by the same subject string the
+/// session cookie carries ("admin" for the shared owner login, "employee:<id>"
+/// for a staff account) rather than a foreign key to Employee, because the owner
+/// login lives in .env.local and has no Employee row to point at.
+model MfaCredential {
+  id      String @id @default(uuid())
+  subject String @unique
+
+  /// TOTP shared secret, encrypted at rest with AES-256-GCM (see src/lib/mfa.ts).
+  /// Stored encrypted so read access to the database alone is not enough to start
+  /// generating valid codes.
+  secretCiphertext String
+
+  /// Null until the first correct code is entered. Enrollment is only finished
+  /// once we've proven the authenticator app is actually working, so a half-set-up
+  /// account can't lock anyone out.
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  backupCodes MfaBackupCode[]
+}
+
+/// Single-use recovery codes, shown once at enrollment. Only hashes are stored —
+/// same scrypt treatment as passwords, since a leaked list would bypass 2FA.
+model MfaBackupCode {
+  id       String @id @default(uuid())
+  mfaId    String
+  codeHash String
+  codeSalt String
+
+  usedAt DateTime?
+
+  mfa MfaCredential @relation(fields: [mfaId], references: [id], onDelete: Cascade)
+
+  @@index([mfaId])
+}
+
+/// A browser that has already passed 2FA, so it isn't challenged on every login.
+/// Only a hash of the cookie value is stored: a database leak then yields nothing
+/// that can be replayed as a trusted device.
+model TrustedDevice {
+  id        String @id @default(uuid())
+  subject   String
+  tokenHash String @unique
+
+  /// Coarse "Chrome on Windows" style hint so a person can recognise a row when
+  /// revoking. Deliberately not the full user-agent string.
+  label String?
+
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  expiresAt  DateTime
+
+  @@index([subject])
+}
