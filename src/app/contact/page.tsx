@@ -62,6 +62,11 @@ export default async function ContactPage({
             Something in that submission didn&apos;t look right. Please check your details and try again.
           </div>
         )}
+        {error === "unavailable" && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            We couldn&apos;t save that just now. Please try again in a moment, or call us at (440) 290-9160.
+          </div>
+        )}
 
         <form action={createTicketAction} className="surface flex flex-col gap-4 rounded-xl p-6">
           {/* Honeypot — real users never see this field (hidden via CSS below), so

@@ -47,16 +47,30 @@ export async function createCustomOrderAction(formData: FormData) {
   }
 
   // Awaited for the same reason as the ticket form: redirect() throws, and an
-  // unawaited write races the response.
-  await createCustomOrder({
-    name,
-    email,
-    category: oneOf(formData.get("category"), VALID_CATEGORIES, "other"),
-    model: model || null,
-    quantity: boundedQuantity(formData.get("quantity")),
-    details,
-    budget: budget || null,
-  });
+  // unawaited write races the response. Only the write is inside the try —
+  // redirect() throws to signal itself, so catching it would read as failure.
+  let saved = false;
+  try {
+    await createCustomOrder({
+      name,
+      email,
+      category: oneOf(formData.get("category"), VALID_CATEGORIES, "other"),
+      model: model || null,
+      quantity: boundedQuantity(formData.get("quantity")),
+      details,
+      budget: budget || null,
+    });
+    saved = true;
+  } catch (error) {
+    console.error(
+      "[custom-order] submission failed:",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+
+  if (!saved) {
+    redirect("/?error=unavailable#custom-build");
+  }
 
   redirect("/?submitted=1#custom-build");
 }

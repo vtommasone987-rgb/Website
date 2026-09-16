@@ -54,12 +54,30 @@ export async function createTicketAction(formData: FormData) {
   // Must be awaited: redirect() throws to unwind the request, so a floating
   // promise here would race the response and could lose the ticket entirely —
   // and any database error would vanish instead of surfacing.
-  await createTicket({
-    name,
-    email,
-    category: oneOf(formData.get("category"), VALID_CATEGORIES, "other"),
-    description,
-  });
+  //
+  // Only the write is inside the try. redirect() signals itself by throwing, so
+  // wrapping it too would catch our own redirect and treat success as a failure.
+  let saved = false;
+  try {
+    await createTicket({
+      name,
+      email,
+      category: oneOf(formData.get("category"), VALID_CATEGORIES, "other"),
+      description,
+    });
+    saved = true;
+  } catch (error) {
+    // Logged for us, not shown to them: the reason a write failed (connection
+    // strings, driver internals) is exactly what shouldn't reach a visitor.
+    console.error(
+      "[ticket] submission failed:",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+
+  if (!saved) {
+    redirect("/contact?error=unavailable");
+  }
 
   redirect("/contact?submitted=1");
 }

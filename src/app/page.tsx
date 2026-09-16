@@ -353,6 +353,11 @@ export default async function Home({
             Something in that request didn&apos;t look right. Please check your details and try again.
           </div>
         )}
+        {error === "unavailable" && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            We couldn&apos;t save that just now. Please try again in a moment, or call us at (440) 290-9160.
+          </div>
+        )}
 
         <form action={createCustomOrderAction} className="surface flex flex-col gap-4 rounded-xl p-6">
           {/* Honeypot — hidden from real users via CSS; bots that fill in every
