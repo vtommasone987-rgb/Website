@@ -10,6 +10,7 @@ const TABS: { href: string; label: string; ownerOnly?: boolean }[] = [
   { href: "/admin/tickets", label: "Tickets" },
   { href: "/admin/custom-orders", label: "Custom Orders" },
   { href: "/admin/employees", label: "Employees" },
+  { href: "/admin/security-log", label: "Security", ownerOnly: true },
   { href: "/admin/trash", label: "Trash" },
 ];
 

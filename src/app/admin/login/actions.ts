@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { authenticate, createSessionValue, SESSION_COOKIE_NAME } from "@/lib/session";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { logSecurityEvent } from "@/lib/security-log";
 
 const LOGIN_ATTEMPT_LIMIT = 10;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -19,13 +20,23 @@ export async function loginAction(formData: FormData) {
   // keep guessing at full speed even if it occasionally finds valid-looking input.
   const ip = await getClientIp();
   if (isRateLimited(`login:${ip}`, LOGIN_ATTEMPT_LIMIT, LOGIN_WINDOW_MS)) {
+    // Logged before the redirect, because redirect() throws to unwind.
+    await logSecurityEvent({ type: "login.rate_limited", ip, subject: username });
     redirect(`/admin/login?error=rate-limited&from=${encodeURIComponent(safeFrom)}`);
   }
 
   const result = await authenticate(username, password);
   if (!result.ok) {
+    // The attempted username is recorded; the password never is, not even
+    // hashed or truncated. A log of wrong guesses is a log of near-miss
+    // passwords, and people reuse them across accounts.
+    await logSecurityEvent({ type: "login.failed", ip, subject: username });
     redirect(`/admin/login?error=1&from=${encodeURIComponent(safeFrom)}`);
   }
+
+  // Successes are recorded too: "logged in from an address you don't recognise"
+  // is only answerable if the normal case is on record as well.
+  await logSecurityEvent({ type: "login.succeeded", ip, subject: result.subject });
 
   const store = await cookies();
   // No maxAge/expires on purpose — this makes it a browser-session cookie, so

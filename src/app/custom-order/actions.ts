@@ -6,6 +6,7 @@ import type { CustomOrderCategory } from "@/lib/types";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import { isTurnstileConfigured, verifyTurnstileToken } from "@/lib/turnstile";
+import { logSecurityEvent } from "@/lib/security-log";
 import {
   boundedQuantity,
   FIELD_LIMITS,
@@ -34,6 +35,7 @@ export async function createCustomOrderAction(formData: FormData) {
 
   const ip = await getClientIp();
   if (isRateLimited(`custom-order:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS)) {
+    await logSecurityEvent({ type: "form.rate_limited", ip, detail: "custom build form" });
     redirect("/?error=rate-limited#custom-build");
   }
 
@@ -41,6 +43,7 @@ export async function createCustomOrderAction(formData: FormData) {
   if (isTurnstileConfigured()) {
     const token = String(formData.get("cf-turnstile-response") ?? "");
     if (!(await verifyTurnstileToken(token, ip))) {
+      await logSecurityEvent({ type: "form.captcha_failed", ip, detail: "custom build form" });
       redirect("/?error=captcha#custom-build");
     }
   }

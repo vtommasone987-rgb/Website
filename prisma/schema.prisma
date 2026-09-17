@@ -229,3 +229,34 @@ model TrustedDevice {
 
   @@index([subject])
 }
+
+/// Security-relevant events: failed logins, rate-limit trips, blocked CAPTCHAs.
+/// Deliberately a small, fixed shape — this table is for spotting patterns
+/// ("40 failed logins from one address overnight"), not general request logging.
+///
+/// What is NOT stored here matters as much as what is: no passwords, no form
+/// contents, no email addresses. A security log that quietly becomes a second
+/// copy of customer data is a liability, not a control.
+model SecurityEvent {
+  id String @id @default(uuid())
+
+  /// Machine-readable event name, e.g. "login.failed" — see SecurityEventType
+  /// in src/lib/security-log.ts for the full list.
+  type String
+
+  /// Best-effort client IP. "unknown" when no trusted source is configured,
+  /// which is itself worth seeing — see src/lib/request-ip.ts.
+  ip String
+
+  /// Who it concerned, when known: "admin", "employee:<id>", or an attempted
+  /// username on a failed login. Null when the event isn't tied to an account.
+  subject String?
+
+  /// Short human-readable context. Never free user input.
+  detail String?
+
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([createdAt])
+}

@@ -6,6 +6,7 @@ import type { TicketCategory } from "@/lib/types";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import { isTurnstileConfigured, verifyTurnstileToken } from "@/lib/turnstile";
+import { logSecurityEvent } from "@/lib/security-log";
 import {
   FIELD_LIMITS,
   isValidEmail,
@@ -38,6 +39,7 @@ export async function createTicketAction(formData: FormData) {
   // Layer 3 — per-IP rate limit.
   const ip = await getClientIp();
   if (isRateLimited(`ticket:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS)) {
+    await logSecurityEvent({ type: "form.rate_limited", ip, detail: "contact form" });
     redirect("/contact?error=rate-limited");
   }
 
@@ -49,6 +51,7 @@ export async function createTicketAction(formData: FormData) {
   if (isTurnstileConfigured()) {
     const token = String(formData.get("cf-turnstile-response") ?? "");
     if (!(await verifyTurnstileToken(token, ip))) {
+      await logSecurityEvent({ type: "form.captcha_failed", ip, detail: "contact form" });
       redirect("/contact?error=captcha");
     }
   }
