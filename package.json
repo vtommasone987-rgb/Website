@@ -10,7 +10,8 @@
     "db": "prisma dev -n opts",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "set-password": "node scripts/set-admin-password.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

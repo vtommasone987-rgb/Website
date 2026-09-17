@@ -88,15 +88,41 @@ function timingSafeEqualString(input: string, expected: string): boolean {
 
 export type AuthResult = { ok: true; subject: string; displayName: string } | { ok: false };
 
-/** Checks the shared admin login (.env.local) first, then the employee directory. */
+/**
+ * Checks the shared owner login (.env.local) first, then the employee directory.
+ *
+ * The owner password is stored the same way employee passwords are: a scrypt hash
+ * plus a salt, set with `npm run set-password`. It used to sit in .env.local as
+ * readable text, which meant anyone who opened that file learned a password the
+ * owner might also use elsewhere — the file has to hold unhashable secrets
+ * (signing and encryption keys) regardless, but a password doesn't have to be one
+ * of them.
+ *
+ * The old plain-text ADMIN_PASSWORD is still honoured if it's the only thing set,
+ * purely so an existing install can't lock itself out before running the script.
+ * It warns loudly, and set-password deletes that line when it runs.
+ */
 export async function authenticate(username: string, password: string): Promise<AuthResult> {
   const expectedUsername = process.env.ADMIN_USERNAME;
-  const expectedPassword = process.env.ADMIN_PASSWORD;
-  if (expectedUsername && expectedPassword) {
-    // Check both regardless of whether the first already failed, so a wrong
-    // username doesn't return faster than a wrong password (timing side-channel).
+  const passwordHash = process.env.ADMIN_PASSWORD_HASH;
+  const passwordSalt = process.env.ADMIN_PASSWORD_SALT;
+  const legacyPassword = process.env.ADMIN_PASSWORD;
+
+  if (expectedUsername && passwordHash && passwordSalt) {
+    // Both checks always run, so a wrong username doesn't fail faster than a
+    // wrong password and leak which one was right (timing side-channel).
     const usernameOk = timingSafeEqualString(username, expectedUsername);
-    const passwordOk = timingSafeEqualString(password, expectedPassword);
+    const passwordOk = verifyPassword(password, passwordHash, passwordSalt);
+    if (usernameOk && passwordOk) {
+      return { ok: true, subject: ADMIN_SUBJECT, displayName: "Admin" };
+    }
+  } else if (expectedUsername && legacyPassword) {
+    console.warn(
+      "[auth] ADMIN_PASSWORD is stored as readable text in .env.local. " +
+        "Run `npm run set-password` to store it hashed instead.",
+    );
+    const usernameOk = timingSafeEqualString(username, expectedUsername);
+    const passwordOk = timingSafeEqualString(password, legacyPassword);
     if (usernameOk && passwordOk) {
       return { ok: true, subject: ADMIN_SUBJECT, displayName: "Admin" };
     }
