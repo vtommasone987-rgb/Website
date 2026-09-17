@@ -21,11 +21,11 @@ function isActive(href: string, pathname: string): boolean {
 }
 
 /**
- * The tab strip, plus a menu button at the right-hand end of the same row.
+ * Admin navigation as a single menu button, right-aligned under the sign-out area.
  *
- * The tabs are the primary navigation and stay exactly as they were. The menu is
- * a second way to reach the same places — useful once the tabs start wrapping on
- * a narrow window, and a quicker jump when you already know where you're going.
+ * Eight sections was too many for a horizontal tab strip — it wrapped onto two
+ * lines on anything narrower than a wide laptop. The button always names the
+ * section you're in, so collapsing the list doesn't cost you your bearings.
  */
 export function AdminNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
@@ -59,49 +59,38 @@ export function AdminNav({ isAdmin }: { isAdmin: boolean }) {
     };
   }, [open]);
 
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <nav className="-mb-px flex flex-wrap gap-x-6 gap-y-1 text-sm font-medium">
-        {visibleTabs.map((tab) => {
-          const active = isActive(tab.href, pathname);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`border-b-2 pb-3 transition-colors ${
-                active
-                  ? "border-brand-600 text-neutral-950 dark:text-neutral-50"
-                  : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-900 dark:hover:border-neutral-700 dark:hover:text-neutral-50"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </nav>
+  const current = visibleTabs.find((tab) => isActive(tab.href, pathname));
 
-      <div ref={menuRef} className="relative shrink-0 pb-3">
+  return (
+    <div className="flex justify-end">
+      <div ref={menuRef} className="relative pb-3">
         <button
           type="button"
           onClick={() => setOpen((wasOpen) => !wasOpen)}
           aria-expanded={open}
           aria-haspopup="menu"
-          aria-label="All sections"
-          title="All sections"
-          className="flex items-center rounded-lg border border-neutral-300 px-2.5 py-1.5 text-neutral-600 transition-colors hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
+          className="surface flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors hover:border-neutral-400 dark:hover:border-neutral-600"
         >
-          {/* The three lines. */}
+          {/* The three lines. aria-hidden because the button's text already names it. */}
           <span className="flex flex-col gap-[3px]" aria-hidden="true">
             <span className="block h-0.5 w-4 rounded-full bg-current" />
             <span className="block h-0.5 w-4 rounded-full bg-current" />
             <span className="block h-0.5 w-4 rounded-full bg-current" />
+          </span>
+          {/* Naming the current section means collapsing the tabs doesn't cost you your bearings. */}
+          <span>{current ? current.label : "Menu"}</span>
+          <span
+            className={`text-xs text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          >
+            ▾
           </span>
         </button>
 
         {open && (
           <div
             role="menu"
-            className="surface absolute top-full right-0 z-50 mt-2 flex w-56 flex-col overflow-hidden rounded-xl p-1.5 shadow-lg"
+            className="surface absolute top-full right-0 z-50 mt-2 flex w-60 flex-col overflow-hidden rounded-xl p-1.5 shadow-lg"
           >
             {visibleTabs.map((tab) => {
               const active = isActive(tab.href, pathname);
