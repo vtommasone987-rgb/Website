@@ -18,24 +18,72 @@ import { resolve } from "node:path";
 const ENV_PATH = resolve(process.cwd(), ".env.local");
 const MIN_LENGTH = 12;
 
-/** Reads a line with the terminal's echo suppressed. */
+/**
+ * Reads a line without echoing it.
+ *
+ * Raw mode is the only reliable way to stop the terminal printing keystrokes:
+ * we take each character ourselves and simply never write it out. It needs a real
+ * terminal, so when input is piped (tests, CI) this falls back to plain readline —
+ * there's nothing to hide from in that case, because there's no screen to shoulder-surf.
+ */
+/**
+ * Piped input is drained once up front and handed out line by line. Opening a
+ * second readline over an already-closed stdin silently never resolves, which is
+ * exactly the kind of bug that only shows up when someone scripts this.
+ */
+let pipedLines = null;
+async function readPipedLines() {
+  if (pipedLines) return pipedLines;
+  let data = "";
+  for await (const chunk of process.stdin) data += chunk;
+  pipedLines = data.split(/\r?\n/);
+  return pipedLines;
+}
+
 function askHidden(question) {
+  const stdin = process.stdin;
+
+  if (!stdin.isTTY) {
+    return readPipedLines().then((lines) => (lines.length ? lines.shift().trim() : ""));
+  }
+
   return new Promise((resolvePrompt) => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-    // Swallow the echoed characters rather than printing them.
-    const onData = (char) => {
-      const s = char.toString();
-      if (s === "\n" || s === "\r" || s === "") return;
-      process.stdout.write("[2K[200D" + question);
-    };
     process.stdout.write(question);
-    process.stdin.on("data", onData);
-    rl.question("", (answer) => {
-      process.stdin.removeListener("data", onData);
-      rl.close();
-      process.stdout.write("\n");
-      resolvePrompt(answer);
-    });
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding("utf8");
+
+    let value = "";
+    const onData = (chunk) => {
+      for (const char of chunk) {
+        switch (char) {
+          case "\r":
+          case "\n":
+          case "": // Ctrl-D
+            stdin.setRawMode(false);
+            stdin.pause();
+            stdin.removeListener("data", onData);
+            process.stdout.write("\n");
+            resolvePrompt(value);
+            return;
+          case "": // Ctrl-C — leave the terminal usable on the way out.
+            stdin.setRawMode(false);
+            stdin.pause();
+            process.stdout.write("\nCancelled. Nothing was changed.\n");
+            process.exit(1);
+            break;
+          case "":
+          case "\b":
+            value = value.slice(0, -1);
+            break;
+          default:
+            // Ignore other control characters; keep anything printable.
+            if (char >= " ") value += char;
+        }
+      }
+    };
+
+    stdin.on("data", onData);
   });
 }
 
