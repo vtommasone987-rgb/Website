@@ -1,4 +1,5 @@
 import { createTicketAction } from "./actions";
+import Link from "next/link";
 import { TurnstileWidget } from "@/app/TurnstileWidget";
 
 export default async function ContactPage({
@@ -130,6 +131,14 @@ export default async function ContactPage({
           >
             Submit ticket
           </button>
+
+          <p className="text-xs text-neutral-500">
+            We use your details only to reply to you. See our{" "}
+            <Link href="/privacy" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">
+              privacy page
+            </Link>
+            .
+          </p>
         </form>
       </div>
 

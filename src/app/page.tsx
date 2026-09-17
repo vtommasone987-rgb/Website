@@ -457,6 +457,14 @@ export default async function Home({
           >
             Submit request
           </button>
+
+          <p className="text-xs text-neutral-500">
+            We use your details only to reply to you. See our{" "}
+            <Link href="/privacy" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">
+              privacy page
+            </Link>
+            .
+          </p>
         </form>
       </section>
     </div>
