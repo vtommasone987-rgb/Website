@@ -70,10 +70,28 @@
   }
 }
 
+/*
+ * Stop the full-bleed bands causing a horizontal scrollbar.
+ *
+ * The bands (the black "Not a typical MSP" strip and the store strip) break out
+ * of the centered column with `w-screen`, which is 100vw — and 100vw *includes*
+ * the vertical scrollbar's width, while the content area does not. On desktop
+ * that left the page about 8px wider than the window, producing a stray
+ * horizontal scrollbar and a slight sideways drag on every page.
+ *
+ * `clip` rather than `hidden`: `hidden` would turn this into a scroll container
+ * and silently break any `position: sticky` used inside it.
+ */
+html {
+  overflow-x: clip;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Same reason as above — belt and braces for browsers that ignore it on html. */
+  overflow-x: clip;
 }
 
 /*
