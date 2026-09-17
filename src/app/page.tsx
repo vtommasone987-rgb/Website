@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listAvailableAssets } from "@/lib/store";
 import { formatPrice } from "@/lib/format";
 import { createCustomOrderAction } from "./custom-order/actions";
+import { TurnstileWidget } from "./TurnstileWidget";
 import { AssetThumbnail } from "./AssetThumbnail";
 
 /** The four claims that actually separate OPTS from a typical MSP — surfaced in
@@ -358,6 +359,11 @@ export default async function Home({
             We couldn&apos;t save that just now. Please try again in a moment, or call us at (440) 290-9160.
           </div>
         )}
+        {error === "captcha" && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            We couldn&apos;t confirm you&apos;re human. Please tick the box and try again.
+          </div>
+        )}
 
         <form action={createCustomOrderAction} className="surface flex flex-col gap-4 rounded-xl p-6">
           {/* Honeypot — hidden from real users via CSS; bots that fill in every
@@ -441,6 +447,9 @@ export default async function Home({
               className="field rounded-lg px-3 py-2.5 text-sm"
             />
           </label>
+
+          {/* Renders nothing until Turnstile keys are configured. */}
+          <TurnstileWidget />
 
           <button
             type="submit"

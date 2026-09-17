@@ -5,6 +5,7 @@ import { createTicket } from "@/lib/store";
 import type { TicketCategory } from "@/lib/types";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { isTurnstileConfigured, verifyTurnstileToken } from "@/lib/turnstile";
 import {
   FIELD_LIMITS,
   isValidEmail,
@@ -38,6 +39,18 @@ export async function createTicketAction(formData: FormData) {
   const ip = await getClientIp();
   if (isRateLimited(`ticket:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS)) {
     redirect("/contact?error=rate-limited");
+  }
+
+  // Layer 4 — Turnstile, when configured. Unlike the honeypot and timing checks
+  // above, a failure here is told to the visitor rather than faked as success:
+  // this one has a real false-positive rate (a slow network, an expired token),
+  // and silently discarding a genuine customer's message would be worse than a
+  // bot learning it was blocked.
+  if (isTurnstileConfigured()) {
+    const token = String(formData.get("cf-turnstile-response") ?? "");
+    if (!(await verifyTurnstileToken(token, ip))) {
+      redirect("/contact?error=captcha");
+    }
   }
 
   const name = singleLine(formData.get("name"), FIELD_LIMITS.name);

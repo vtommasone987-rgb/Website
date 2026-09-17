@@ -1,4 +1,5 @@
 import { createTicketAction } from "./actions";
+import { TurnstileWidget } from "@/app/TurnstileWidget";
 
 export default async function ContactPage({
   searchParams,
@@ -67,6 +68,11 @@ export default async function ContactPage({
             We couldn&apos;t save that just now. Please try again in a moment, or call us at (440) 290-9160.
           </div>
         )}
+        {error === "captcha" && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            We couldn&apos;t confirm you&apos;re human. Please tick the box and try again.
+          </div>
+        )}
 
         <form action={createTicketAction} className="surface flex flex-col gap-4 rounded-xl p-6">
           {/* Honeypot — real users never see this field (hidden via CSS below), so
@@ -114,6 +120,9 @@ export default async function ContactPage({
               className="field rounded-lg px-3 py-2.5 text-sm"
             />
           </label>
+
+          {/* Renders nothing until Turnstile keys are configured. */}
+          <TurnstileWidget />
 
           <button
             type="submit"

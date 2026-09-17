@@ -15,6 +15,8 @@
  * loads it while the framework config is still being resolved.
  */
 
+import { TURNSTILE_ORIGIN } from "./turnstile";
+
 export type HttpHeader = { readonly key: string; readonly value: string };
 
 /** Two years, the minimum for HSTS preload eligibility. */
@@ -68,7 +70,12 @@ export function createNonce(): string {
  * `'unsafe-eval'` for React's enhanced error stacks, unnonced inline styles for
  * the hot-reloading CSS injector, and `ws:` for the HMR socket. None ship to production.
  */
-export function buildContentSecurityPolicy(nonce: string, isDevelopment: boolean): string {
+export function buildContentSecurityPolicy(
+  nonce: string,
+  isDevelopment: boolean,
+  /** Widen the policy for the Turnstile widget only when it's actually configured. */
+  turnstile: boolean = false,
+): string {
   const directives: readonly string[] = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ""}`,
@@ -102,12 +109,24 @@ export function buildContentSecurityPolicy(nonce: string, isDevelopment: boolean
     // blob:/data: cover next/image's own output, not remote hosts.
     "img-src 'self' blob: data:",
     "font-src 'self'",
-    `connect-src 'self'${isDevelopment ? " ws: wss:" : ""}`,
+    `connect-src 'self'${isDevelopment ? " ws: wss:" : ""}${turnstile ? ` ${TURNSTILE_ORIGIN}` : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
     // Server actions POST back to our own origin; nothing should post elsewhere.
     "form-action 'self'",
     "frame-ancestors 'none'",
+    /**
+     * The Turnstile challenge renders in an iframe, so its origin has to be
+     * allowed here — but only while Turnstile is actually configured. With no
+     * keys set this stays `frame-src 'none'`, so the policy never carries a
+     * third-party origin the site isn't using.
+     *
+     * Note there is no matching entry in `script-src`: that directive uses
+     * 'strict-dynamic', which makes browsers ignore host allow-lists entirely.
+     * The widget's loader is permitted by the nonce on its <Script> tag (see
+     * TurnstileWidget.tsx), and strict-dynamic then covers what that loader pulls in.
+     */
+    turnstile ? `frame-src ${TURNSTILE_ORIGIN}` : "frame-src 'none'",
     ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
   ];
 

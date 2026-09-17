@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME, isValidSessionValue } from "@/lib/session";
+import { isTurnstileConfigured } from "@/lib/turnstile";
 import {
   SECURITY_HEADERS,
   buildContentSecurityPolicy,
@@ -40,7 +41,11 @@ function requiresSession(pathname: string): boolean {
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   const nonce = createNonce();
-  const csp = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const csp = buildContentSecurityPolicy(
+    nonce,
+    process.env.NODE_ENV === "development",
+    isTurnstileConfigured(),
+  );
 
   if (isApiPath(pathname)) {
     const cors = corsFor(request.headers.get("origin"));

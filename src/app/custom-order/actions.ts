@@ -5,6 +5,7 @@ import { createCustomOrder } from "@/lib/store";
 import type { CustomOrderCategory } from "@/lib/types";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { isTurnstileConfigured, verifyTurnstileToken } from "@/lib/turnstile";
 import {
   boundedQuantity,
   FIELD_LIMITS,
@@ -34,6 +35,14 @@ export async function createCustomOrderAction(formData: FormData) {
   const ip = await getClientIp();
   if (isRateLimited(`custom-order:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS)) {
     redirect("/?error=rate-limited#custom-build");
+  }
+
+  // Told to the visitor rather than faked as success — see the ticket form for why.
+  if (isTurnstileConfigured()) {
+    const token = String(formData.get("cf-turnstile-response") ?? "");
+    if (!(await verifyTurnstileToken(token, ip))) {
+      redirect("/?error=captcha#custom-build");
+    }
   }
 
   const name = singleLine(formData.get("name"), FIELD_LIMITS.name);
